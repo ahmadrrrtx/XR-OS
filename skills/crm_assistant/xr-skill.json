@@ -1,0 +1,351 @@
+{
+  "schemaVersion": 1,
+  "id": "crm_assistant",
+  "name": "CRM Assistant",
+  "version": "1.0.0",
+  "description": "CRM Assistant delivers practical business output with market context, metrics, stakeholder clarity, and execution focus.",
+  "longDescription": "CRM Assistant delivers practical business output with market context, metrics, stakeholder clarity, and execution focus.\n\nThis official XR professional skill packages role instructions, reasoning policy, workflows, examples, validation tests, memory templates, and safe permission declarations so users can make XR smarter without writing code.\n\nXR 2.1E official Skill hardening: includes a professional playbook, diagnostic prompt, operating manual, permission docs, quality tests, advanced examples, quality-gate workflow, and memory templates.",
+  "publisher": "xr-official",
+  "license": "MIT",
+  "categories": [
+    "business"
+  ],
+  "tags": [
+    "crm",
+    "customer",
+    "pipeline",
+    "ops"
+  ],
+  "keywords": [
+    "crm",
+    "customer",
+    "pipeline",
+    "ops",
+    "crm assistant",
+    "professional",
+    "xr"
+  ],
+  "compatibility": {
+    "xr": ">=1.0.0",
+    "os": [
+      "any"
+    ],
+    "providers": [],
+    "modes": [
+      "agent",
+      "plan",
+      "ask"
+    ]
+  },
+  "activation": {
+    "phrases": [
+      "CRM Assistant",
+      "crm assistant",
+      "crm",
+      "customer",
+      "pipeline",
+      "ops"
+    ],
+    "intents": [
+      "crm_assistant"
+    ],
+    "fileGlobs": [],
+    "slashCommands": [
+      "crm_assistant"
+    ],
+    "auto": true
+  },
+  "content": {
+    "instructions": "SKILL.md",
+    "reasoning": "docs/reasoning.md",
+    "knowledge": [
+      "knowledge/checklist.md",
+      "knowledge/playbook.md"
+    ],
+    "promptTemplates": [
+      "templates/output.md",
+      "prompts/default.md",
+      "prompts/diagnostic.md"
+    ],
+    "examples": [
+      "examples/basic.md",
+      "examples/professional.md"
+    ],
+    "tests": [
+      "tests/selection.md",
+      "tests/quality.md",
+      "tests/permissions.md"
+    ],
+    "docs": [
+      "README.md",
+      "docs/operating-manual.md",
+      "docs/permissions.md"
+    ],
+    "assets": []
+  },
+  "contributions": {
+    "commands": [
+      {
+        "name": "crm-assistant",
+        "title": "CRM Assistant",
+        "description": "Apply the CRM Assistant skill to a task.",
+        "prompt": "Use the CRM Assistant skill and produce professional, validated output."
+      },
+      {
+        "name": "crm-assistant-doctor",
+        "title": "CRM Assistant Doctor",
+        "description": "Run the CRM Assistant Skill quality and readiness checklist.",
+        "prompt": "Use CRM Assistant to inspect the current task or artifact and return readiness, risks, validation gaps, and next actions."
+      }
+    ],
+    "voiceIntents": [
+      {
+        "id": "crm_assistant",
+        "utterances": [
+          "use crm assistant",
+          "act as crm assistant",
+          "switch to crm assistant mode"
+        ],
+        "action": "crm-assistant",
+        "confirmation": "risky"
+      }
+    ],
+    "chatActions": [
+      {
+        "id": "crm_assistant",
+        "title": "CRM Assistant",
+        "description": "Apply CRM Assistant expertise in chat.",
+        "prompt": "Apply CRM Assistant expertise to the current task."
+      }
+    ],
+    "slashCommands": [
+      {
+        "name": "crm-assistant",
+        "title": "/crm-assistant",
+        "description": "Invoke CRM Assistant.",
+        "prompt": "Invoke the CRM Assistant skill."
+      },
+      {
+        "name": "crm-assistant-doctor",
+        "title": "/crm-assistant-doctor",
+        "description": "Diagnose readiness with CRM Assistant.",
+        "prompt": "Run CRM Assistant diagnostic mode before final output."
+      }
+    ],
+    "computerActions": [],
+    "researchModes": [],
+    "planners": [
+      {
+        "id": "crm_assistant:planner",
+        "title": "CRM Assistant Planner",
+        "description": "Plan work as CRM Assistant.",
+        "prompt": "Create a concise professional plan before execution."
+      }
+    ],
+    "agentBehaviors": [
+      {
+        "id": "crm_assistant:behavior",
+        "title": "CRM Assistant Behavior",
+        "description": "Professional behavior profile for CRM Assistant.",
+        "prompt": "Operate as a careful, safety-aware CRM Assistant."
+      }
+    ],
+    "workflows": [
+      {
+        "id": "crm_assistant:workflow",
+        "title": "CRM Assistant Professional Workflow",
+        "description": "Default workflow for CRM Assistant.",
+        "steps": [
+          {
+            "id": "intake",
+            "title": "Intake",
+            "instruction": "Identify objective, audience, constraints, available inputs, risk level, and acceptance criteria.",
+            "expectedOutput": "A clear task brief."
+          },
+          {
+            "id": "plan",
+            "title": "Plan",
+            "instruction": "Choose the smallest professional workflow that can satisfy the brief; call out assumptions and required approvals.",
+            "expectedOutput": "A short execution plan."
+          },
+          {
+            "id": "execute",
+            "title": "Execute",
+            "instruction": "Produce the work product with domain best practices, traceable decisions, and no unsafe hidden behavior.",
+            "expectedOutput": "The requested deliverable."
+          },
+          {
+            "id": "validate",
+            "title": "Validate",
+            "instruction": "Check completeness, correctness, safety, edge cases, and user-specific constraints before final handoff.",
+            "expectedOutput": "Validation checklist and residual risks."
+          }
+        ]
+      },
+      {
+        "id": "crm_assistant:professional-delivery",
+        "title": "CRM Assistant Professional Delivery",
+        "description": "End-to-end professional workflow for CRM Assistant.",
+        "steps": [
+          {
+            "id": "intake",
+            "title": "Intake",
+            "instruction": "Clarify objective, market/customer context, constraints, and success metrics.",
+            "expectedOutput": "Task brief and acceptance criteria"
+          },
+          {
+            "id": "diagnose",
+            "title": "Diagnose",
+            "instruction": "Diagnose current state and key bottlenecks.",
+            "expectedOutput": "Diagnosis with assumptions and risks"
+          },
+          {
+            "id": "produce",
+            "title": "Produce",
+            "instruction": "Generate options with trade-offs, costs, risks, and expected impact.",
+            "expectedOutput": "Professional work product"
+          },
+          {
+            "id": "validate",
+            "title": "Validate",
+            "instruction": "Recommend a prioritized plan with metrics and owner-ready next steps.",
+            "expectedOutput": "Validation checklist"
+          },
+          {
+            "id": "handoff",
+            "title": "Handoff",
+            "instruction": "Create an executive-ready deliverable and validation checklist.",
+            "expectedOutput": "Reusable handoff summary"
+          }
+        ]
+      },
+      {
+        "id": "crm_assistant:quality-gate",
+        "title": "CRM Assistant Quality Gate",
+        "description": "Pre-final validation gate for CRM Assistant.",
+        "steps": [
+          {
+            "id": "scope-check",
+            "title": "Scope Check",
+            "instruction": "Confirm the output stays within user intent, authorization, and declared permissions.",
+            "expectedOutput": "Scope status"
+          },
+          {
+            "id": "evidence-check",
+            "title": "Evidence Check",
+            "instruction": "Separate facts, assumptions, estimates, and recommendations.",
+            "expectedOutput": "Evidence notes"
+          },
+          {
+            "id": "risk-check",
+            "title": "Risk Check",
+            "instruction": "List operational, security, privacy, quality, and stakeholder risks.",
+            "expectedOutput": "Risk register"
+          },
+          {
+            "id": "finalize",
+            "title": "Finalize",
+            "instruction": "Produce the final answer with validation and next steps.",
+            "expectedOutput": "Final deliverable"
+          }
+        ]
+      }
+    ],
+    "uiPanels": [
+      {
+        "id": "crm_assistant:panel",
+        "surface": "dashboard",
+        "title": "CRM Assistant",
+        "description": "CRM Assistant skill status, commands, examples, and permissions.",
+        "markdown": "# CRM Assistant\n\nCRM Assistant delivers practical business output with market context, metrics, stakeholder clarity, and execution focus."
+      }
+    ],
+    "dashboardWidgets": [
+      {
+        "id": "crm_assistant:widget",
+        "surface": "dashboard",
+        "title": "CRM Assistant Usage",
+        "description": "Shows recent CRM Assistant usage and validation status."
+      }
+    ]
+  },
+  "tools": [
+    "read_file",
+    "write_file"
+  ],
+  "mcp": [],
+  "plugins": [],
+  "memoryTemplates": [
+    {
+      "id": "crm_assistant:prefs",
+      "category": "workflow",
+      "contentTemplate": "For CRM Assistant, remember the user's preferred output format, standards, and recurring constraints.",
+      "scope": "project",
+      "importance": 3
+    },
+    {
+      "id": "crm_assistant:standards",
+      "category": "workflow",
+      "contentTemplate": "When using CRM Assistant, remember project-specific quality standards, constraints, and preferred validation methods.",
+      "scope": "project",
+      "importance": 4
+    },
+    {
+      "id": "crm_assistant:handoff",
+      "category": "workflow",
+      "contentTemplate": "When CRM Assistant finishes, remember reusable handoff format, recurring risks, and accepted output structure.",
+      "scope": "project",
+      "importance": 3
+    }
+  ],
+  "dependencies": [],
+  "permissions": [
+    {
+      "scope": "fs:write",
+      "reason": "CRM Assistant may save generated deliverables after approval.",
+      "dangerous": true
+    }
+  ],
+  "settings": [
+    {
+      "key": "output-depth",
+      "title": "Output depth",
+      "description": "Controls whether the skill produces concise or detailed deliverables.",
+      "type": "enum",
+      "required": false,
+      "default": "professional",
+      "options": [
+        "concise",
+        "professional",
+        "deep"
+      ]
+    },
+    {
+      "key": "quality-gate",
+      "title": "Quality gate",
+      "description": "Require the Skill to run its quality gate before final response.",
+      "type": "boolean",
+      "required": false,
+      "default": true,
+      "options": []
+    },
+    {
+      "key": "evidence-level",
+      "title": "Evidence level",
+      "description": "How much validation/evidence the Skill should include.",
+      "type": "enum",
+      "required": false,
+      "default": "standard",
+      "options": [
+        "light",
+        "standard",
+        "strict"
+      ]
+    }
+  ],
+  "verification": {
+    "level": "official",
+    "reviewedBy": "xr-core",
+    "reviewedAt": "2026-06-30"
+  }
+}

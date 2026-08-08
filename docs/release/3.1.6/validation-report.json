@@ -1,0 +1,250 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-26T23:09:15.914Z",
+  "version": {
+    "name": "@rrrtx/xr",
+    "version": "5.2.0",
+    "codename": "Capability Ecosystem",
+    "display": "5.2.0 (Capability Ecosystem)",
+    "displayVersion": "5.2.0 (Capability Ecosystem)",
+    "repo": "https://github.com/ahmadrrrtx/xr",
+    "homepage": "https://xr-gules.vercel.app",
+    "npm": "https://www.npmjs.com/package/@rrrtx/xr",
+    "description": "XR 5.2 (Capability Ecosystem) — a trusted, discoverable, testable, composable capability ecosystem for plugins, skills, MCP servers, providers, tools, workflows, integrations, and artifact transforms: common inspectable descriptors; publisher/provenance/package-integrity metadata; declared-vs-effective authority; dependency/compatibility inspection; evidence-based discovery; certification contract tests; safe install/update/disable/quarantine/rollback; and CLI/daemon/dashboard inspection, all routed through existing execution, trust, durability, context, workflow, marketplace, signing, and permission systems without introducing Phase 10 business/control-plane capabilities.",
+    "author": "Muhammad Ahmad (@ahmadrrrtx)",
+    "license": "MIT",
+    "pluginApi": 2
+  },
+  "environment": {
+    "bun": "1.3.14",
+    "node": "v24.3.0",
+    "os": "linux",
+    "arch": "x64",
+    "release": "6.1.158+",
+    "cpu": "linux/x64",
+    "memory": {
+      "totalBytes": 2081390592,
+      "freeBytes": 632168448
+    },
+    "ci": false,
+    "tty": false
+  },
+  "commit": "9ce62bbb75a1d7c94a5c7e720bb2d3af05d56940",
+  "isolatedHome": "/tmp/xr-validate-1785107332354",
+  "status": "pass",
+  "steps": [
+    {
+      "id": "version-sync",
+      "command": [
+        "bun",
+        "run",
+        "set-version:check"
+      ],
+      "required": true,
+      "status": "pass",
+      "code": 0,
+      "durationMs": 31.790757000000003,
+      "stdoutTail": "[set-version] package.json → @rrrtx/xr@5.2.0\n[set-version] ✓ src/core/version.ts is in sync (v5.2.0 Capability Ecosystem)\n[set-version] ✓ website/src/lib/site.ts looks in sync\n",
+      "stderrTail": "$ bun run scripts/set-version.ts --check\n"
+    },
+    {
+      "id": "typecheck",
+      "command": [
+        "bun",
+        "run",
+        "typecheck"
+      ],
+      "required": true,
+      "status": "pass",
+      "code": 0,
+      "durationMs": 11720.862234,
+      "stdoutTail": "",
+      "stderrTail": "$ tsc --noEmit\n"
+    },
+    {
+      "id": "test",
+      "command": [
+        "bun",
+        "test"
+      ],
+      "required": true,
+      "status": "pass",
+      "code": 0,
+      "durationMs": 10020.838184,
+      "stdoutTail": "bun test v1.3.14 (0d9b296a)\n  [sensitive] Open https://example.com — opens https://example.com\n    [perf] retrieval avg (1,000 items, lexical)         17.42 ms\n    [perf] retrieval single pass (5,000 items)          17.49 ms\n    [perf] authorize() over 2,000 items                 1.92 ms\n    [perf] package assembly (1,000 items)               16.14 ms\n    [perf] injection build avg                          0.030 ms\n    [perf] compression (100 items)                      2.52 ms\n    [perf] compression ratio                            32.7% of original\n    [perf] db growth per context item                   791 bytes\n    [perf] db size (1,000 items)                        776 KiB\n    [perf] legacy MemoryStore.recall avg (500 entries)  6.74 ms\n    [perf] assemble + persist avg                       7.28 ms\n    [perf] package revalidation avg                     0.66 ms\n\n    ── XR 4.5 benchmark summary ──\n    retrieval avg (1,000 items, lexical)         17.42 ms\n    retrieval single pass (5,000 items)          17.49 ms\n    authorize() over 2,000 items                 1.92 ms\n    package assembly (1,000 items)               16.14 ms\n    injection build avg                          0.030 ms\n    compression (100 items)                      2.52 ms\n    compression ratio                            32.7% of original\n    db growth per context item                   791 bytes\n    db size (1,000 items)                        776 KiB\n    legacy MemoryStore.recall avg (500 entries)  6.74 ms\n    assemble + persist avg                       7.28 ms\n    package revalidation avg                     0.66 ms\n\u001b[32m[browser] sandbox ENABLED (secure production mode)\u001b[0m\n  [safe] Wait 100ms — wait_ms is non-destructive\n  [sensitive] File read /etc/hostname — file read /etc/hostname\n  [safe] Wait 100ms — wait_ms is non-destructive\n  [destructive] File write /tmp/xr-envsvc-test-8FawjH/scratch.txt — file write /tmp/xr-envsvc-test-8FawjH/scratch.txt\n  [safe] Wait 100ms — wait_ms is non-destructive\n  [safe] Wait 100ms — wait_ms is non-destructive\n  [safe] Wait 100ms — wait_ms is non-destructive\n",
+      "stderrTail": "— Process Handling > commandExists > commandExists caches positive result [4.14ms]\n(pass) Async Utilities — Process Handling > commandExists > commandExists caches negative result [2.31ms]\n(pass) Async Utilities — Process Handling > commandExists > clearCommandExistsCache resets memo [3.97ms]\n(pass) Async Utilities — Process Handling > spawnAndWait > spawnAndWait completes for quick command [2.00ms]\n(pass) Async Utilities — Process Handling > spawnAndWait > spawnAndWait reports timeout for long command [201.06ms]\n(pass) Async Utilities — Process Handling > runCapture > runCapture returns combined stdout+stderr [2.58ms]\n(pass) Async Utilities — Process Handling > multiple concurrent runCommand calls do not block each other [4.79ms]\n\ntest/workflow/engine.test.ts:\n(pass) Workflow Engine > Definition management > publish and retrieve definition [11.41ms]\n(pass) Workflow Engine > Simple workflow execution > trigger → deterministic → completion flow [12.06ms]\n(pass) Workflow Engine > Simple workflow execution > trigger → agentic → completion flow [8.24ms]\n(pass) Workflow Engine > Human approval workflow > workflow pauses for approval and resumes on decision [9.43ms]\n(pass) Workflow Engine > Human approval workflow > denial stops workflow [7.76ms]\n(pass) Workflow Engine > Pause and cancel > pause and resume [7.46ms]\n(pass) Workflow Engine > Pause and cancel > cancel flow [7.55ms]\n(pass) Workflow Engine > Inspection > inspect run returns full details [7.83ms]\n\ntest/workflow/types.test.ts:\n(pass) Workflow State Machine > Run-level transitions > valid transitions work [0.07ms]\n(pass) Workflow State Machine > Run-level transitions > invalid transitions throw [2.64ms]\n(pass) Workflow State Machine > Run-level transitions > cancellation flow [0.07ms]\n(pass) Workflow State Machine > Node-level transitions > normal flow [0.07ms]\n(pass) Workflow State Machine > Node-level transitions > human approval flow [0.03ms]\n(pass) Workflow State Machine > Node-level transitions > failure and skip [0.03ms]\n(pass) Workflow State Machine > Predicates > canAdvanceNodes [0.02ms]\n(pass) Workflow State Machine > Predicates > canAcceptHumanInput [0.04ms]\n(pass) Workflow State Machine > Predicates > canPause [0.03ms]\n(pass) Workflow State Machine > Predicates > canCancel [0.02ms]\n(pass) Workflow Types > isValidWorkflowTransition [0.03ms]\n(pass) Workflow Types > terminal states are idempotent [0.07ms]\n(pass) Workflow Types > active states [0.02ms]\n(pass) Workflow Types > human waiting states [0.06ms]\n(pass) Workflow Types > hashDefinition produces consistent output [0.14ms]\n(pass) Node Factory Functions > trigger node [0.07ms]\n(pass) Node Factory Functions > agentic node [0.04ms]\n(pass) Node Factory Functions > human approval node [0.09ms]\n(pass) Node Factory Functions > human review node [0.11ms]\n(pass) Node Factory Functions > branch node [0.32ms]\n(pass) Node Factory Functions > completion node [0.03ms]\n(pass) Node Factory Functions > node graph validation catches cycles [0.31ms]\n(pass) Node Factory Functions > node graph validation catches missing dependencies [0.11ms]\n(pass) Workflow Versioning > createDraft creates version 0 [0.05ms]\n(pass) Workflow Versioning > publishDraft creates version 1 [0.06ms]\n(pass) Workflow Versioning > cannot publish already-published [0.08ms]\n(pass) Workflow Versioning > createNewVersion from published [0.18ms]\n(pass) Workflow Versioning > canMigrateActiveRun accepts compatible versions [0.40ms]\n\ntest/capabilities/ecosystem.test.ts:\n(pass) effective authority is declaration ∩ policy ∩ grants minus denied [10.64ms]\n(pass) capability service exposes valid common descriptors and effective authority [178.80ms]\n(pass) plugin updates requesting new permissions are blocked for review [8.50ms]\n(pass) plugin rollback restores package but never restores authority silently [8.99ms]\n(pass) skill package extraction blocks path traversal transactionally [6.93ms]\n\n 1128 pass\n 0 fail\n 4212 expect() calls\nRan 1128 tests across 95 files. [9.99s]\n"
+    },
+    {
+      "id": "inventory",
+      "command": [
+        "bun",
+        "run",
+        "scripts/baseline-inventory.ts"
+      ],
+      "required": true,
+      "status": "pass",
+      "code": 0,
+      "durationMs": 45.37645800000246,
+      "stdoutTail": "wrote docs/release/3.1.6/inventory.json and INVENTORY.md\n",
+      "stderrTail": ""
+    },
+    {
+      "id": "cli-version",
+      "command": [
+        "bun",
+        "run",
+        "src/index.ts",
+        "--version"
+      ],
+      "required": true,
+      "status": "pass",
+      "code": 0,
+      "durationMs": 156.76071500000035,
+      "stdoutTail": "v5.2.0 (Capability Ecosystem)\n",
+      "stderrTail": ""
+    },
+    {
+      "id": "cli-help",
+      "command": [
+        "bun",
+        "run",
+        "src/index.ts",
+        "help"
+      ],
+      "required": true,
+      "status": "pass",
+      "code": 0,
+      "durationMs": 157.84938200000033,
+      "stdoutTail": "ws\n  xr control                             safe desktop and browser computer control\n  xr env                                 environment interaction OS: governed sessions, capabilities, policy, history\n  xr voice                               voice input/output (opt-in)\n\n  Context\n  ──────────────────────────────────────────────\n  xr workspace                           list, create, switch, or delete workspaces\n  xr session                             list, inspect, or export past sessions\n  xr memory                              durable, inspectable, user-controlled memory\n  xr context                             inspect and control what XR knows\n  xr config                              view or update configuration\n\n  Intelligence\n  ──────────────────────────────────────────────\n  xr providers                           manage LLM providers — list, set primary model, add keys, test\n  xr models                              local models — recommend, install, list, set, test (change model anytime)\n  xr budget                              view and set spend caps\n\n  Extensions\n  ──────────────────────────────────────────────\n  xr capabilities                        inspect, discover, certify, quarantine, and roll back capabilities\n  xr skills                              unified skills runtime + marketplace\n  xr plugins                             discover, install, enable, and manage plugins\n  xr mcp                                 Model Context Protocol servers\n\n  Trust & safety\n  ──────────────────────────────────────────────\n  xr shield                              local security, privacy, and system integrity\n  xr trust                               trust & isolation: risk tiers, placement backends, pre-action decisions\n  xr audit                               tamper-evident audit log: tail, verify, export\n  xr attacks                             run prompt-injection defense benchmark\n\n  System\n  ──────────────────────────────────────────────\n  xr doctor                              full system health check + repair hints\n  xr status                              installation and component status\n  xr update                              check for updates and install with rollback guard\n  xr repair                              repair config, permissions, and dependencies safely\n  xr logs                                show recent XR runtime / audit activity\n\n  Global flags\n  ──────────────────────────────────────────────\n  --help, -h                           show help\n  --version, -v                        print version\n  --json                               machine-readable JSON on stdout\n  --yaml                               YAML output (where supported)\n  --format text|json|yaml|markdown     output format\n  --quiet, -q                          suppress non-essential output\n  --verbose                            extra detail\n  --debug                              debug mode (also XR_DEBUG=1)\n  --no-color                           disable ANSI color (also NO_COLOR=1)\n  --yes, -y                            assume yes for confirmations\n  --workspace <id>                     target workspace\n  --mode agent|plan|ask                execution mode\n  --model <name>                       model override\n  --provider <id>                      provider override\n  --budget <usd>                       per-task spend ceiling\n  --dry-run                            simulate without side effects\n\n  Modes  (same in Shell · Control Center · CLI)\n  ──────────────────────────────────────────────\n  agent  execute tools, write files, run shell (approvals enforced)\n  plan   produce a plan only — no tool execution\n  ask    answer-only, read-only, cheap\n\n  Topic help:  xr help <topic>\n  Topics:  shell  providers  models  memory  security  skills  research  workspace  budget  scripting\n\n  Docs     https://github.com/ahmadrrrtx/xr\n  Website  https://xr-gules.vercel.app\n\n  › A user should not need docs for common tasks — try xr doctor and xr \"hello\".\n\n",
+      "stderrTail": ""
+    },
+    {
+      "id": "doctor-json",
+      "command": [
+        "bun",
+        "run",
+        "src/index.ts",
+        "doctor",
+        "--json"
+      ],
+      "required": true,
+      "status": "pass",
+      "code": 0,
+      "durationMs": 979.108860999997,
+      "stdoutTail": "vider-sambanova\",\n      \"label\": \"Provider: sambanova\",\n      \"state\": \"fail\",\n      \"detail\": \"API key SAMBANOVA_API_KEY not set\"\n    },\n    {\n      \"id\": \"provider-xai\",\n      \"label\": \"Provider: xai\",\n      \"state\": \"fail\",\n      \"detail\": \"API key XAI_API_KEY not set\"\n    },\n    {\n      \"id\": \"provider-perplexity\",\n      \"label\": \"Provider: perplexity\",\n      \"state\": \"fail\",\n      \"detail\": \"API key PERPLEXITY_API_KEY not set\"\n    },\n    {\n      \"id\": \"provider-huggingface\",\n      \"label\": \"Provider: huggingface\",\n      \"state\": \"fail\",\n      \"detail\": \"API key HF_API_KEY not set\"\n    },\n    {\n      \"id\": \"provider-cerebras\",\n      \"label\": \"Provider: cerebras\",\n      \"state\": \"fail\",\n      \"detail\": \"API key CEREBRAS_API_KEY not set\"\n    },\n    {\n      \"id\": \"provider-anthropic\",\n      \"label\": \"Provider: anthropic\",\n      \"state\": \"fail\",\n      \"detail\": \"API key ANTHROPIC_API_KEY not set\"\n    },\n    {\n      \"id\": \"provider-google\",\n      \"label\": \"Provider: google\",\n      \"state\": \"fail\",\n      \"detail\": \"API key GOOGLE_API_KEY not set\"\n    },\n    {\n      \"id\": \"provider-mistral\",\n      \"label\": \"Provider: mistral\",\n      \"state\": \"fail\",\n      \"detail\": \"API key MISTRAL_API_KEY not set\"\n    },\n    {\n      \"id\": \"provider-cohere\",\n      \"label\": \"Provider: cohere\",\n      \"state\": \"fail\",\n      \"detail\": \"API key COHERE_API_KEY not set\"\n    },\n    {\n      \"id\": \"provider-bedrock\",\n      \"label\": \"Provider: bedrock\",\n      \"state\": \"warn\",\n      \"detail\": \"AWS credentials not configured\"\n    },\n    {\n      \"id\": \"provider-openai\",\n      \"label\": \"Provider: openai\",\n      \"state\": \"fail\",\n      \"detail\": \"API key OPENAI_API_KEY not set\"\n    },\n    {\n      \"id\": \"research\",\n      \"label\": \"Research engine\",\n      \"state\": \"ok\",\n      \"detail\": \"0 sessions\"\n    },\n    {\n      \"id\": \"voice-microphone-tools\",\n      \"label\": \"Microphone capture\",\n      \"state\": \"fail\",\n      \"detail\": \"no recorder found\"\n    },\n    {\n      \"id\": \"voice-speaker-tools\",\n      \"label\": \"Speaker playback\",\n      \"state\": \"warn\",\n      \"detail\": \"no player found\"\n    },\n    {\n      \"id\": \"voice-input-devices\",\n      \"label\": \"Input devices\",\n      \"state\": \"ok\",\n      \"detail\": \"1 detected\"\n    },\n    {\n      \"id\": \"voice-output-devices\",\n      \"label\": \"Output devices\",\n      \"state\": \"ok\",\n      \"detail\": \"1 detected\"\n    },\n    {\n      \"id\": \"voice-stt\",\n      \"label\": \"Speech-to-text\",\n      \"state\": \"ok\",\n      \"detail\": \"auto: run transcribe() / describeAsync() for live probe\"\n    },\n    {\n      \"id\": \"voice-tts\",\n      \"label\": \"Text-to-speech\",\n      \"state\": \"ok\",\n      \"detail\": \"auto: run speak() / describeAsync() for live probe\"\n    },\n    {\n      \"id\": \"voice-mode\",\n      \"label\": \"Voice mode\",\n      \"state\": \"warn\",\n      \"detail\": \"disabled by default\"\n    },\n    {\n      \"id\": \"voice-privacy\",\n      \"label\": \"Voice privacy\",\n      \"state\": \"ok\",\n      \"detail\": \"alwaysListen=false, cloudStt=false, transcripts=session\"\n    },\n    {\n      \"id\": \"memory\",\n      \"label\": \"Memory engine\",\n      \"state\": \"ok\",\n      \"detail\": \"0 entries\"\n    },\n    {\n      \"id\": \"plugins\",\n      \"label\": \"Plugin platform\",\n      \"state\": \"ok\",\n      \"detail\": \"0 installed, 0 enabled, 0 need attention\"\n    },\n    {\n      \"id\": \"mcp\",\n      \"label\": \"MCP platform\",\n      \"state\": \"ok\",\n      \"detail\": \"0 servers, 0 enabled, 0 healthy\"\n    },\n    {\n      \"id\": \"capabilities\",\n      \"label\": \"Capability Ecosystem\",\n      \"state\": \"ok\",\n      \"detail\": \"159 capabilities, 145 certified, 0 quarantined\"\n    },\n    {\n      \"id\": \"multi-agent\",\n      \"label\": \"Multi-agent runtime\",\n      \"state\": \"ok\",\n      \"detail\": \"23 agents, 0 workflows, 0 running\"\n    },\n    {\n      \"id\": \"control\",\n      \"label\": \"Computer Control\",\n      \"state\": \"warn\",\n      \"detail\": \"linux · keyboard:false mouse:false\"\n    },\n    {\n      \"id\": \"environment\",\n      \"label\": \"Environment OS\",\n      \"state\": \"warn\",\n      \"detail\": \"unsupported: desktop,voice · partial: vision\"\n    }\n  ]\n}\n",
+      "stderrTail": ""
+    },
+    {
+      "id": "daemon-unit",
+      "command": [
+        "bun",
+        "test",
+        "test/daemon.test.ts"
+      ],
+      "required": true,
+      "status": "pass",
+      "code": 0,
+      "durationMs": 406.45425500000056,
+      "stdoutTail": "bun test v1.3.14 (0d9b296a)\n",
+      "stderrTail": "\ntest/daemon.test.ts:\n(pass) health endpoint is open (no auth) and reports localhost [20.44ms]\n(pass) API requires the local token (401 without it) [6.70ms]\n(pass) API works with the token [29.89ms]\n(pass) wrong token is rejected [6.64ms]\n(pass) token via query string works for the dashboard page [11.22ms]\n(pass) security endpoint returns a block-rate report [7.05ms]\n(pass) cost endpoint aggregates recorded events [7.47ms]\n(pass) unknown route 404s (authed) [9.11ms]\n(pass) dashboard html embeds the token and has no external assets [11.31ms]\n(pass) agents endpoint returns the built-in workforce and workflow counters [9.64ms]\n(pass) agents workflow detail endpoint returns a persisted workflow [12.57ms]\n(pass) memory endpoint requires the token (401 without it) [9.70ms]\n(pass) memory endpoint lists entries but hides exclusions [9.84ms]\n(pass) memory DELETE removes a single entry [7.95ms]\n(pass) memory DELETE all clears everything [8.13ms]\n(pass) memory DELETE of a missing id 404s [6.23ms]\n(pass) dashboard html includes the durable memory viewer [9.18ms]\n\n 17 pass\n 0 fail\n 50 expect() calls\nRan 17 tests across 1 file. [384.00ms]\n"
+    },
+    {
+      "id": "install-sh-syntax",
+      "command": [
+        "bash",
+        "-n",
+        "install.sh"
+      ],
+      "required": true,
+      "status": "pass",
+      "code": 0,
+      "durationMs": 3.5286230000019714,
+      "stdoutTail": "",
+      "stderrTail": ""
+    },
+    {
+      "id": "package-dry-run",
+      "command": [
+        "bun",
+        "pm",
+        "pack",
+        "--dry-run"
+      ],
+      "required": true,
+      "status": "pass",
+      "code": 0,
+      "durationMs": 35.971308999996836,
+      "stdoutTail": "etplace-store.ts\npacked 20.59KB src/skills/marketplace.ts\npacked 6.0KB src/skills/online-registry.ts\npacked 1.83KB src/skills/permissions.ts\npacked 1.90KB src/skills/registry.ts\npacked 0.93KB src/skills/resolver.ts\npacked 4.31KB src/skills/runtime.ts\npacked 10.10KB src/skills/schema.ts\npacked 22.70KB src/skills/sdk.ts\npacked 3.81KB src/skills/search-index.ts\npacked 2.63KB src/skills/semver.ts\npacked 2.30KB src/skills/signing.ts\npacked 1.65KB src/skills/validator.ts\npacked 3.44KB src/skills/verifier.ts\npacked 1.19KB src/skills/version-resolver.ts\npacked 0.66KB src/state/repos/audit-repo.ts\npacked 0.81KB src/state/repos/cost-repo.ts\npacked 351B src/state/repos/index.ts\npacked 1.0KB src/state/repos/project-memory-repo.ts\npacked 0.82KB src/state/repos/session-repo.ts\npacked 1.14KB src/state/repos/skill-repo.ts\npacked 2.36KB src/state/repos/user-memory-repo.ts\npacked 0.68KB src/state/repos/workflow-repo.ts\npacked 430B src/state/store.ts\npacked 50.61KB src/state/workspace-store.ts\npacked 0.78KB src/telegram/auth.ts\npacked 7.27KB src/telegram/bot.ts\npacked 2.33KB src/telegram/commands.ts\npacked 2.29KB src/telegram/render.ts\npacked 0.87KB src/templates/workflows/competitor-monitoring.json\npacked 0.80KB src/templates/workflows/content-calendar.json\npacked 1.36KB src/templates/workflows/customer-onboarding.json\npacked 0.75KB src/templates/workflows/email-campaign.json\npacked 1.98KB src/templates/workflows/invoice-generation.json\npacked 1.92KB src/templates/workflows/lead-qualification.json\npacked 0.84KB src/templates/workflows/market-research.json\npacked 1.28KB src/templates/workflows/meeting-prep.json\npacked 1.40KB src/templates/workflows/sales-followup.json\npacked 1.52KB src/templates/workflows/support-routing.json\npacked 0.85KB src/templates/workflows/weekly-reports.json\npacked 5.55KB src/tools/control.ts\npacked 0.92KB src/tools/egress.ts\npacked 3.22KB src/tools/files.ts\npacked 10.16KB src/tools/git.ts\npacked 1.85KB src/tools/registry.ts\npacked 5.22KB src/tools/system.ts\npacked 4.74KB src/tools/web.ts\npacked 3.90KB src/trust/authority.ts\npacked 7.22KB src/trust/classify.ts\npacked 5.22KB src/trust/credentials.ts\npacked 6.00KB src/trust/environment/backend.ts\npacked 4.77KB src/trust/environment/container.ts\npacked 2.30KB src/trust/environment/in-process.ts\npacked 8.49KB src/trust/environment/manager.ts\npacked 12.52KB src/trust/environment/namespace.ts\npacked 3.84KB src/trust/environment/restricted-process.ts\npacked 1.34KB src/trust/index.ts\npacked 6.45KB src/trust/isolated-spawn.ts\npacked 5.44KB src/trust/policy.ts\npacked 1.84KB src/trust/resources.ts\npacked 11.1KB src/trust/service.ts\npacked 11.42KB src/trust/tool-support.ts\npacked 17.22KB src/trust/types.ts\npacked 3.92KB src/trust/verify.ts\npacked 4.55KB src/ui/ansi.ts\npacked 20.39KB src/ui/brand.ts\npacked 2.10KB src/ui/css-vars.css\npacked 5.45KB src/ui/icons.ts\npacked 2.1KB src/ui/index.ts\npacked 10.51KB src/ui/layout.ts\npacked 13.0KB src/ui/primitives.ts\npacked 7.37KB src/ui/spinner.ts\npacked 12.23KB src/ui/terminal.ts\npacked 9.78KB src/ui/theme.ts\npacked 9.60KB src/ui/tokens.ts\npacked 2.1KB src/update/selfheal.ts\npacked 1.95KB src/util/concurrency.ts\npacked 2.0KB src/util/fs-async.ts\npacked 8.23KB src/util/process.ts\npacked 4.67KB src/voice/audio.ts\npacked 12.33KB src/voice/cli.ts\npacked 11.92KB src/voice/hardware.ts\npacked 6.1KB src/voice/index.ts\npacked 10.12KB src/voice/intents.ts\npacked 9.57KB src/voice/pipeline.ts\npacked 2.60KB src/voice/settings.ts\npacked 11.28KB src/voice/stt.ts\npacked 12.16KB src/voice/tts.ts\npacked 3.64KB src/voice/types.ts\npacked 1.91KB src/voice/vad.ts\npacked 2.22KB src/voice/wake.ts\npacked 36.56KB src/workflow/engine.ts\npacked 0.86KB src/workflow/index.ts\npacked 4.75KB src/workflow/inspection.ts\npacked 19.27KB src/workflow/nodes.ts\npacked 11.31KB src/workflow/repository.ts\npacked 7.14KB src/workflow/state-machine.ts\npacked 23.87KB src/workflow/types.ts\npacked 5.37KB src/workflow/versioning.ts\n\nrrrtx-xr-5.2.0.tgz\n\nTotal files: 1421\nUnpacked size: 6.0MB\n",
+      "stderrTail": ""
+    },
+    {
+      "id": "windows-install-ps1",
+      "command": [
+        "powershell",
+        "-File",
+        "install.ps1"
+      ],
+      "required": false,
+      "status": "skip",
+      "code": null,
+      "durationMs": 0,
+      "stdoutTail": "",
+      "stderrTail": "",
+      "reason": "Windows validation requires a Windows runner; support matrix marks Windows as not verified in this Linux run."
+    },
+    {
+      "id": "docker-build",
+      "command": [
+        "docker",
+        "build",
+        "."
+      ],
+      "required": false,
+      "status": "skip",
+      "code": null,
+      "durationMs": 0,
+      "stdoutTail": "",
+      "stderrTail": "",
+      "reason": "Docker CLI/daemon is unavailable in this environment; Docker remains blocked for release sign-off until run on a Docker-capable host."
+    },
+    {
+      "id": "optional-cloud-providers",
+      "command": [
+        "xr",
+        "providers",
+        "test"
+      ],
+      "required": false,
+      "status": "skip",
+      "code": null,
+      "durationMs": 0,
+      "stdoutTail": "",
+      "stderrTail": "",
+      "reason": "Required baseline must not depend on cloud credentials or network."
+    }
+  ],
+  "artifacts": {
+    "packageJsonSha256": "0051ca1dfe816aac1c2c2954c99404aed8f584af384d7aa58184b61f3e3d43ee",
+    "bunLockSha256": "97f7a99d14cfcdd1a27f334f5851c2574a0d9d64c1c392b55d8dbb1e098faaee",
+    "inventorySha256": "8f6b85ee2d78e4f86684fef412819e465820e857743ebff04febcff7076612bf"
+  },
+  "skipped": [
+    {
+      "id": "windows-install-ps1",
+      "reason": "Windows validation requires a Windows runner; support matrix marks Windows as not verified in this Linux run."
+    },
+    {
+      "id": "docker-build",
+      "reason": "Docker CLI/daemon is unavailable in this environment; Docker remains blocked for release sign-off until run on a Docker-capable host."
+    },
+    {
+      "id": "optional-cloud-providers",
+      "reason": "Required baseline must not depend on cloud credentials or network."
+    }
+  ],
+  "knownLimitations": [
+    "This validation run is Linux-only unless a Windows/macOS runner executes the same command.",
+    "Cloud providers and local model servers are discovery/health-checked but not required without user credentials/runtimes.",
+    "Performance numbers are produced by scripts/measure-baseline.ts and are host-specific."
+  ]
+}

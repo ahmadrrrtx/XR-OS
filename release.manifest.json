@@ -1,0 +1,240 @@
+{
+  "$schema": "./docs/release/release-manifest.schema.json",
+  "manifestVersion": 2,
+  "comment": "XR RELEASE MANIFEST — the single source of truth for release identity and every public claim. Constitution Article XXII.1 ('One release manifest stamps version across version.ts, package.json, README, installers, website ... CI fails on drift') and Article XIX.1 ('no public claim without an evidence link'). Edit THIS file, then run `bun run release:stamp`. Never hand-edit a stamped surface.",
+  "identity": {
+    "name": "@rrrtx/xr",
+    "version": "7.1.0",
+    "codename": "Truth",
+    "description": "XR — a local-first, provider-neutral AI agent runtime. BYOK, spend-capped, tamper-evident audit, plugin/MCP extensibility.",
+    "author": "Muhammad Ahmad (@ahmadrrrtx)",
+    "license": "MIT",
+    "repo": "https://github.com/ahmadrrrtx/xr",
+    "homepage": "https://xr-gules.vercel.app",
+    "npm": "https://www.npmjs.com/package/@rrrtx/xr",
+    "stability": "public-beta"
+  },
+  "stampTargets": [
+    {
+      "id": "package.json",
+      "path": "package.json",
+      "kind": "json-version"
+    },
+    {
+      "id": "version.ts",
+      "path": "src/core/version.ts",
+      "kind": "generated-module"
+    },
+    {
+      "id": "site.ts",
+      "path": "website/src/lib/site.ts",
+      "kind": "site-identity"
+    },
+    {
+      "id": "readme",
+      "path": "README.md",
+      "kind": "marker-block"
+    },
+    {
+      "id": "install.sh",
+      "path": "install.sh",
+      "kind": "shell-var"
+    },
+    {
+      "id": "install.ps1",
+      "path": "install.ps1",
+      "kind": "powershell-var"
+    }
+  ],
+  "claims": [
+    {
+      "id": "local-first",
+      "text": "Runs locally with local models; no mandatory cloud control plane.",
+      "evidence": "src/providers/presets.ts — local runtimes (ollama, lmstudio, llamacpp, jan, localai, vllm) are first-class provider presets; src/config/config.ts localModels.",
+      "expires": "2027-07-31"
+    },
+    {
+      "id": "byok",
+      "text": "Bring your own API key — provider credentials stay in your environment.",
+      "evidence": "src/config/config.ts provider apiKeyEnv resolution; secrets redacted by src/baseline/status.ts:redactValue.",
+      "expires": "2027-07-31"
+    },
+    {
+      "id": "spend-capped",
+      "text": "Per-task budget ceilings in USD and tokens, enforced during the agent loop.",
+      "evidence": "src/core/agent.ts budget enforcement; src/services/budget-service.ts; test/cost.test.ts.",
+      "expires": "2027-07-31"
+    },
+    {
+      "id": "tamper-evident-audit",
+      "text": "Hash-chained local audit log with a verification command.",
+      "evidence": "src/commands/audit.ts (verify); audit repo hash chain; test suite covers audit verification.",
+      "expires": "2027-07-31"
+    },
+    {
+      "id": "skills-count",
+      "text": "65 bundled skills.",
+      "evidence": "Directory count of skills/ at release commit — verified mechanically by scripts/claim-lint.ts (countSkills).",
+      "expires": "2027-07-31",
+      "mechanical": {
+        "kind": "skill-count",
+        "value": 65
+      }
+    },
+    {
+      "id": "provider-neutral",
+      "text": "Multiple model providers behind one interface; no vendor lock-in.",
+      "evidence": "src/providers/presets.ts and src/providers/registry.ts — provider-agnostic Provider interface.",
+      "expires": "2027-07-31"
+    },
+    {
+      "id": "plugin-mcp",
+      "text": "Plugin host and MCP client, available from CLI and interactive surfaces.",
+      "evidence": "src/plugins/manager.ts, src/mcp/manager.ts, src/services/agent-service.ts extraTools; test/phase0/surface-parity.test.ts.",
+      "expires": "2027-07-31"
+    },
+    {
+      "id": "typescript-runtime",
+      "text": "Written in TypeScript, running on Bun.",
+      "evidence": "package.json engines.bun; tsconfig.json; zero Rust sources in the repository.",
+      "expires": "2027-07-31"
+    },
+    {
+      "id": "signed-releases",
+      "text": "Tagged releases ship cosign keyless signatures over SHA256SUMS, a CycloneDX SBOM and SLSA3 provenance for every per-target artifact.",
+      "evidence": ".github/workflows/release.yml (gates → 5-target matrix → SHA256SUMS → cosign sign-blob → SLSA generator_generic_slsa3 with wired outputs.digests); docs/release/VERIFYING_RELEASES.md. Verifiable from the public Rekor log after the first tagged release ≥ 7.1.0.",
+      "expires": "2027-07-31"
+    },
+    {
+      "id": "validated-channels",
+      "text": "The same canonical build installs through GitHub Releases, Homebrew, WinGet, Scoop, .deb, npm and Docker, with channel configs generated from one manifest.",
+      "evidence": "scripts/channel-manifest.ts (one generator) + packaging/ (generated, drift-gated by `bun run channel:check` in CI) + .github/workflows/channel-install.yml (install tests). Real published-release installs run in the weekly job; .deb is dpkg-installed on every PR.",
+      "expires": "2027-07-31"
+    }
+  ],
+  "prohibitedClaims": [
+    {
+      "pattern": "SOC\\s*2",
+      "reason": "XR holds no SOC 2 audit. Article XIX forbids false certification claims."
+    },
+    {
+      "pattern": "ISO\\s*27001",
+      "reason": "XR holds no ISO 27001 certification."
+    },
+    {
+      "pattern": "HIPAA",
+      "reason": "XR has no HIPAA compliance program or BAA."
+    },
+    {
+      "pattern": "PCI[\\s-]*DSS",
+      "reason": "XR holds no PCI-DSS attestation."
+    },
+    {
+      "pattern": "FedRAMP",
+      "reason": "XR holds no FedRAMP authorization."
+    },
+    {
+      "pattern": "12,?000\\+?\\s*(verified\\s*)?skills",
+      "reason": "The repository ships 65 skills. Use the mechanically-verified skills-count claim."
+    },
+    {
+      "pattern": "Rust\\s+core",
+      "reason": "XR contains no Rust. It is TypeScript on Bun."
+    },
+    {
+      "pattern": "74k|74,000",
+      "reason": "Fabricated GitHub star count."
+    },
+    {
+      "pattern": "military[\\s-]*grade",
+      "reason": "Meaningless security superlative."
+    },
+    {
+      "pattern": "kernel[\\s-]*level\\s+isolation",
+      "reason": "XR enforces in-process policy, not kernel isolation. Isolation is a later phase."
+    },
+    {
+      "pattern": "unhackable|100%\\s*secure|zero[\\s-]*risk",
+      "reason": "Absolute security claims are never evidenceable."
+    },
+    {
+      "pattern": "SSO\\s*/\\s*SAML",
+      "reason": "No SSO/SAML integration exists. Identity is local token issuance (src/enterprise/deployment/identity); there is no IdP client and no SCIM endpoint."
+    },
+    {
+      "pattern": "Enterprise\\s+SSO",
+      "reason": "No SSO integration exists; this fabricated feature was removed by the Phase 10 claim audit."
+    },
+    {
+      "pattern": "SLAs?\\s*&\\s*dedicated",
+      "reason": "No SLA or dedicated support exists. XR is free, MIT-licensed and self-hosted; there is no commercial support organization."
+    },
+    {
+      "pattern": "Custom\\s+skills\\s*&\\s*SLA",
+      "reason": "No commercial SLA exists. Business OS modules are MIT-licensed extensions, not a paid tier."
+    },
+    {
+      "pattern": "rewritten\\s+the\\s+core\\s+in\\s+Rust",
+      "reason": "XR contains no Rust (TypeScript on Bun). The website blog asserted this fabrication; removed by the Phase 10 claim audit."
+    },
+    {
+      "pattern": "millions?\\s+of\\s+agent",
+      "reason": "Fabricated usage-scale claim. XR has no telemetry pipeline that could measure agent-run counts."
+    },
+    {
+      "pattern": "thousands\\s+of\\s+developer",
+      "reason": "Fabricated feedback-scale claim; no mechanism exists to count developer feedback sessions."
+    },
+    {
+      "pattern": "generally\\s+available|General\\s+availability",
+      "reason": "XR is labeled public-beta in release.manifest.json. 'Generally available' is an unsupported release label (Article XXII.4)."
+    },
+    {
+      "pattern": "Trusted\\s+by\\s+(teams|regulated)",
+      "reason": "Unsupported social-proof claim. No customer or regulated-industry adoption evidence exists."
+    },
+    {
+      "pattern": "per\\s+user\\s*/\\s*month",
+      "reason": "No hosted or per-seat pricing exists. XR is free, open source and self-hosted."
+    },
+    {
+      "pattern": "Start\\s+(Pro|Team)\\s+trial",
+      "reason": "No trial SaaS offering exists; the pricing page fabrications were removed."
+    },
+    {
+      "pattern": "Contact\\s+sales",
+      "reason": "There is no sales team and no hosted product (the enterprise page itself states this)."
+    },
+    {
+      "pattern": "VPC\\s+deployment",
+      "reason": "No hosted VPC offering exists; XR is self-hosted by the deployer."
+    },
+    {
+      "pattern": "Dedicated\\s+solutions?\\s+engineer",
+      "reason": "No commercial support organization exists."
+    },
+    {
+      "pattern": "commercial\\s+license",
+      "reason": "XR is MIT-licensed with no commercial tier. The FAQ asserted a commercial license; removed."
+    },
+    {
+      "pattern": "Audit\\s+logs\\s*\\(",
+      "reason": "Audit retention is configurable per event class (src/enterprise/audit/retention.ts), not a fixed hosted-tier feature."
+    }
+  ],
+  "supervisedTerms": [
+    "certified",
+    "enterprise-grade",
+    "fully supported",
+    "production-ready",
+    "complete",
+    "guaranteed"
+  ],
+  "scannedSurfaces": [
+    "README.md",
+    "website/src/**/*.{ts,tsx}",
+    "install.sh",
+    "install.ps1",
+    "package.json"
+  ]
+}

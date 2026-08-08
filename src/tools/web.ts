@@ -1,0 +1,128 @@
+/**
+ * XR — web/live-data tools. Every one is egress-gated through the CENTRALIZED
+ * egress proxy (Phase 4 · T4): the allow-list is enforced at connection time
+ * (DNS resolution, private-range/metadata blocking, redirect revalidation,
+ * connection pinning, byte caps) — not merely on the argument string.
+ * The legacy `hostAllowed` suffix check remains as a cheap first gate.
+ */
+import type { Tool, ToolContext, ToolResult } from "../core/types.ts";
+import { hostAllowed, htmlToText } from "./egress.ts";
+import { guardedFetch, type EgressPolicy } from "../security/egress-proxy.ts";
+import { networkTrustRequest } from "../runtime/trust/tool-support.ts";
+
+const DEFAULT_SEARXNG = process.env.XR_SEARXNG ?? "https://searx.be";
+
+function egressOk(url: string, ctx: ToolContext): string | null {
+  const allow = ctx.egressAllowlist ?? [];
+  if (allow.length === 0) return "egress blocked: no domains in allow-list";
+  if (!hostAllowed(url, allow)) {
+    let host = "?";
+    try {
+      host = new URL(url).hostname;
+    } catch {}
+    return `egress blocked: ${host} not in allow-list`;
+  }
+  return null;
+}
+
+/** Build the centralized-proxy policy from the tool context. */
+function policyFor(ctx: ToolContext): EgressPolicy {
+  return {
+    allowlist: ctx.egressAllowlist ?? [],
+    allowedHosts: ctx.allowedHosts ?? [],
+    audit: (event, detail) => ctx.audit(event, detail),
+  };
+}
+
+export const fetchUrlTool: Tool = {
+  name: "fetch_url",
+  description: "Fetch a web page (allow-listed domains only) and return clean text.",
+  parameters: { url: "string (http/https url)" },
+  requiresApproval: false,
+  trustRequest: (args, ctx) => networkTrustRequest("fetch_url", ctx.cwd, [String(args.url ?? "")]),
+  async run(args, ctx): Promise<ToolResult> {
+    const url = String(args.url ?? "");
+    const blocked = egressOk(url, ctx);
+    if (blocked) {
+      ctx.audit("fetch_url.blocked", { url, reason: blocked });
+      return { ok: false, output: blocked };
+    }
+    const res = await guardedFetch(url, { headers: { "User-Agent": "XR-Agent/4.0" } }, policyFor(ctx));
+    if (res.blocked || !res.ok) {
+      ctx.audit("fetch_url.blocked", { url, reason: res.reason ?? `status ${res.status}` });
+      return { ok: false, output: res.reason ?? `fetch failed (status ${res.status})` };
+    }
+    const text = htmlToText(res.body ?? "");
+    ctx.audit("fetch_url", { url, bytes: text.length, pinned: res.pinnedAddress });
+    return { ok: true, output: text.slice(0, 4000) + (text.length > 4000 ? "\n…(truncated)" : "") };
+  },
+};
+
+export const webSearchTool: Tool = {
+  name: "web_search",
+  description: "Search the web via a SearXNG instance. Returns titles + snippets + urls.",
+  parameters: { query: "string", max_results: "number (optional, default 5)" },
+  requiresApproval: false,
+  trustRequest: (_args, ctx) => networkTrustRequest("web_search", ctx.cwd, ["searxng"]),
+  async run(args, ctx): Promise<ToolResult> {
+    const query = String(args.query ?? "");
+    const max = Number(args.max_results ?? 5);
+    const endpoint = `${DEFAULT_SEARXNG.replace(/\/$/, "")}/search?q=${encodeURIComponent(query)}&format=json`;
+    // The SearXNG host must itself be allow-listed.
+    const blocked = egressOk(endpoint, ctx);
+    if (blocked) {
+      ctx.audit("web_search.blocked", { query, reason: blocked });
+      return { ok: false, output: `${blocked} (add your SearXNG host to egress allow-list)` };
+    }
+    const res = await guardedFetch(
+      endpoint,
+      { headers: { "User-Agent": "XR-Agent/4.0" } },
+      policyFor(ctx),
+    );
+    if (res.blocked || !res.ok) {
+      ctx.audit("web_search.blocked", { query, reason: res.reason ?? `status ${res.status}` });
+      return { ok: false, output: res.reason ?? `search failed (status ${res.status})` };
+    }
+    try {
+      const json: any = JSON.parse(res.body ?? "{}");
+      const results = (json.results ?? []).slice(0, max).map((r: any, i: number) =>
+        `${i + 1}. ${r.title}\n   ${r.url}\n   ${(r.content ?? "").slice(0, 200)}`,
+      );
+      ctx.audit("web_search", { query, count: results.length });
+      return { ok: true, output: results.join("\n\n") || "(no results)", data: { count: results.length } };
+    } catch (e) {
+      return { ok: false, output: `search failed: ${(e as Error).message}` };
+    }
+  },
+};
+
+export const checkPackageTool: Tool = {
+  name: "check_package",
+  description: "Look up a package's latest version & info (npm or pypi). Egress-gated.",
+  parameters: { name: "string", registry: "string ('npm' | 'pypi')" },
+  requiresApproval: false,
+  trustRequest: (args, ctx) =>
+    networkTrustRequest("check_package", ctx.cwd, [String(args.registry ?? "npm") === "pypi" ? "pypi.org" : "registry.npmjs.org"]),
+  async run(args, ctx): Promise<ToolResult> {
+    const name = String(args.name ?? "");
+    const registry = String(args.registry ?? "npm");
+    const url =
+      registry === "pypi"
+        ? `https://pypi.org/pypi/${encodeURIComponent(name)}/json`
+        : `https://registry.npmjs.org/${encodeURIComponent(name)}`;
+    const blocked = egressOk(url, ctx);
+    if (blocked) return { ok: false, output: blocked };
+    const res = await guardedFetch(url, {}, policyFor(ctx));
+    if (res.blocked) return { ok: false, output: res.reason ?? "egress blocked" };
+    if (res.status !== undefined && res.status >= 400) return { ok: false, output: `not found: ${name}` };
+    try {
+      const json: any = JSON.parse(res.body ?? "{}");
+      const version = registry === "pypi" ? json.info?.version : json["dist-tags"]?.latest;
+      const desc = registry === "pypi" ? json.info?.summary : json.description;
+      ctx.audit("check_package", { name, registry, version });
+      return { ok: true, output: `${name}@${version} — ${desc ?? ""}`, data: { version } };
+    } catch (e) {
+      return { ok: false, output: `lookup failed: ${(e as Error).message}` };
+    }
+  },
+};

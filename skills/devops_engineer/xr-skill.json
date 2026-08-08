@@ -1,0 +1,362 @@
+{
+  "schemaVersion": 1,
+  "id": "devops_engineer",
+  "name": "DevOps Engineer",
+  "version": "1.0.0",
+  "description": "DevOps Engineer delivers production-grade technical work with clear architecture, tests, maintainability, and operational awareness.",
+  "longDescription": "DevOps Engineer delivers production-grade technical work with clear architecture, tests, maintainability, and operational awareness.\n\nThis official XR professional skill packages role instructions, reasoning policy, workflows, examples, validation tests, memory templates, and safe permission declarations so users can make XR smarter without writing code.\n\nXR 2.1E official Skill hardening: includes a professional playbook, diagnostic prompt, operating manual, permission docs, quality tests, advanced examples, quality-gate workflow, and memory templates.",
+  "publisher": "xr-official",
+  "license": "MIT",
+  "categories": [
+    "developer"
+  ],
+  "tags": [
+    "ci-cd",
+    "infra",
+    "observability",
+    "devops"
+  ],
+  "keywords": [
+    "ci-cd",
+    "infra",
+    "observability",
+    "devops",
+    "devops engineer",
+    "professional",
+    "xr"
+  ],
+  "compatibility": {
+    "xr": ">=1.0.0",
+    "os": [
+      "any"
+    ],
+    "providers": [],
+    "modes": [
+      "agent",
+      "plan",
+      "ask"
+    ]
+  },
+  "activation": {
+    "phrases": [
+      "DevOps Engineer",
+      "devops engineer",
+      "ci-cd",
+      "infra",
+      "observability",
+      "devops"
+    ],
+    "intents": [
+      "devops_engineer"
+    ],
+    "fileGlobs": [],
+    "slashCommands": [
+      "devops_engineer"
+    ],
+    "auto": true
+  },
+  "content": {
+    "instructions": "SKILL.md",
+    "reasoning": "docs/reasoning.md",
+    "knowledge": [
+      "knowledge/checklist.md",
+      "knowledge/playbook.md"
+    ],
+    "promptTemplates": [
+      "templates/output.md",
+      "prompts/default.md",
+      "prompts/diagnostic.md"
+    ],
+    "examples": [
+      "examples/basic.md",
+      "examples/professional.md"
+    ],
+    "tests": [
+      "tests/selection.md",
+      "tests/quality.md",
+      "tests/permissions.md"
+    ],
+    "docs": [
+      "README.md",
+      "docs/operating-manual.md",
+      "docs/permissions.md"
+    ],
+    "assets": []
+  },
+  "contributions": {
+    "commands": [
+      {
+        "name": "devops-engineer",
+        "title": "DevOps Engineer",
+        "description": "Apply the DevOps Engineer skill to a task.",
+        "prompt": "Use the DevOps Engineer skill and produce professional, validated output."
+      },
+      {
+        "name": "devops-engineer-doctor",
+        "title": "DevOps Engineer Doctor",
+        "description": "Run the DevOps Engineer Skill quality and readiness checklist.",
+        "prompt": "Use DevOps Engineer to inspect the current task or artifact and return readiness, risks, validation gaps, and next actions."
+      }
+    ],
+    "voiceIntents": [
+      {
+        "id": "devops_engineer",
+        "utterances": [
+          "use devops engineer",
+          "act as devops engineer",
+          "switch to devops engineer mode"
+        ],
+        "action": "devops-engineer",
+        "confirmation": "risky"
+      }
+    ],
+    "chatActions": [
+      {
+        "id": "devops_engineer",
+        "title": "DevOps Engineer",
+        "description": "Apply DevOps Engineer expertise in chat.",
+        "prompt": "Apply DevOps Engineer expertise to the current task."
+      }
+    ],
+    "slashCommands": [
+      {
+        "name": "devops-engineer",
+        "title": "/devops-engineer",
+        "description": "Invoke DevOps Engineer.",
+        "prompt": "Invoke the DevOps Engineer skill."
+      },
+      {
+        "name": "devops-engineer-doctor",
+        "title": "/devops-engineer-doctor",
+        "description": "Diagnose readiness with DevOps Engineer.",
+        "prompt": "Run DevOps Engineer diagnostic mode before final output."
+      }
+    ],
+    "computerActions": [],
+    "researchModes": [],
+    "planners": [
+      {
+        "id": "devops_engineer:planner",
+        "title": "DevOps Engineer Planner",
+        "description": "Plan work as DevOps Engineer.",
+        "prompt": "Create a concise professional plan before execution."
+      }
+    ],
+    "agentBehaviors": [
+      {
+        "id": "devops_engineer:behavior",
+        "title": "DevOps Engineer Behavior",
+        "description": "Professional behavior profile for DevOps Engineer.",
+        "prompt": "Operate as a careful, safety-aware DevOps Engineer."
+      }
+    ],
+    "workflows": [
+      {
+        "id": "devops_engineer:workflow",
+        "title": "DevOps Engineer Professional Workflow",
+        "description": "Default workflow for DevOps Engineer.",
+        "steps": [
+          {
+            "id": "intake",
+            "title": "Intake",
+            "instruction": "Identify objective, audience, constraints, available inputs, risk level, and acceptance criteria.",
+            "expectedOutput": "A clear task brief."
+          },
+          {
+            "id": "plan",
+            "title": "Plan",
+            "instruction": "Choose the smallest professional workflow that can satisfy the brief; call out assumptions and required approvals.",
+            "expectedOutput": "A short execution plan."
+          },
+          {
+            "id": "execute",
+            "title": "Execute",
+            "instruction": "Produce the work product with domain best practices, traceable decisions, and no unsafe hidden behavior.",
+            "expectedOutput": "The requested deliverable."
+          },
+          {
+            "id": "validate",
+            "title": "Validate",
+            "instruction": "Check completeness, correctness, safety, edge cases, and user-specific constraints before final handoff.",
+            "expectedOutput": "Validation checklist and residual risks."
+          }
+        ]
+      },
+      {
+        "id": "devops_engineer:professional-delivery",
+        "title": "DevOps Engineer Professional Delivery",
+        "description": "End-to-end professional workflow for DevOps Engineer.",
+        "steps": [
+          {
+            "id": "intake",
+            "title": "Intake",
+            "instruction": "Map the codebase surface, inputs, outputs, constraints, and owner expectations.",
+            "expectedOutput": "Task brief and acceptance criteria"
+          },
+          {
+            "id": "diagnose",
+            "title": "Diagnose",
+            "instruction": "Identify the smallest safe implementation path and the tests that prove it.",
+            "expectedOutput": "Diagnosis with assumptions and risks"
+          },
+          {
+            "id": "produce",
+            "title": "Produce",
+            "instruction": "Implement or describe changes with attention to maintainability, security, and performance.",
+            "expectedOutput": "Professional work product"
+          },
+          {
+            "id": "validate",
+            "title": "Validate",
+            "instruction": "Run or recommend validation commands and capture failures precisely.",
+            "expectedOutput": "Validation checklist"
+          },
+          {
+            "id": "handoff",
+            "title": "Handoff",
+            "instruction": "Handoff with changed files, rationale, risks, and next steps.",
+            "expectedOutput": "Reusable handoff summary"
+          }
+        ]
+      },
+      {
+        "id": "devops_engineer:quality-gate",
+        "title": "DevOps Engineer Quality Gate",
+        "description": "Pre-final validation gate for DevOps Engineer.",
+        "steps": [
+          {
+            "id": "scope-check",
+            "title": "Scope Check",
+            "instruction": "Confirm the output stays within user intent, authorization, and declared permissions.",
+            "expectedOutput": "Scope status"
+          },
+          {
+            "id": "evidence-check",
+            "title": "Evidence Check",
+            "instruction": "Separate facts, assumptions, estimates, and recommendations.",
+            "expectedOutput": "Evidence notes"
+          },
+          {
+            "id": "risk-check",
+            "title": "Risk Check",
+            "instruction": "List operational, security, privacy, quality, and stakeholder risks.",
+            "expectedOutput": "Risk register"
+          },
+          {
+            "id": "finalize",
+            "title": "Finalize",
+            "instruction": "Produce the final answer with validation and next steps.",
+            "expectedOutput": "Final deliverable"
+          }
+        ]
+      }
+    ],
+    "uiPanels": [
+      {
+        "id": "devops_engineer:panel",
+        "surface": "dashboard",
+        "title": "DevOps Engineer",
+        "description": "DevOps Engineer skill status, commands, examples, and permissions.",
+        "markdown": "# DevOps Engineer\n\nDevOps Engineer delivers production-grade technical work with clear architecture, tests, maintainability, and operational awareness."
+      }
+    ],
+    "dashboardWidgets": [
+      {
+        "id": "devops_engineer:widget",
+        "surface": "dashboard",
+        "title": "DevOps Engineer Usage",
+        "description": "Shows recent DevOps Engineer usage and validation status."
+      }
+    ]
+  },
+  "tools": [
+    "read_file",
+    "write_file",
+    "shell"
+  ],
+  "mcp": [],
+  "plugins": [],
+  "memoryTemplates": [
+    {
+      "id": "devops_engineer:prefs",
+      "category": "workflow",
+      "contentTemplate": "For DevOps Engineer, remember the user's preferred output format, standards, and recurring constraints.",
+      "scope": "project",
+      "importance": 3
+    },
+    {
+      "id": "devops_engineer:standards",
+      "category": "workflow",
+      "contentTemplate": "When using DevOps Engineer, remember project-specific quality standards, constraints, and preferred validation methods.",
+      "scope": "project",
+      "importance": 4
+    },
+    {
+      "id": "devops_engineer:handoff",
+      "category": "workflow",
+      "contentTemplate": "When DevOps Engineer finishes, remember reusable handoff format, recurring risks, and accepted output structure.",
+      "scope": "project",
+      "importance": 3
+    }
+  ],
+  "dependencies": [],
+  "permissions": [
+    {
+      "scope": "fs:read",
+      "reason": "DevOps Engineer may need to inspect project files.",
+      "dangerous": false
+    },
+    {
+      "scope": "fs:write",
+      "reason": "DevOps Engineer may produce or edit project files only after approval.",
+      "dangerous": true
+    },
+    {
+      "scope": "shell",
+      "reason": "DevOps Engineer may run local validation commands only after approval.",
+      "dangerous": true
+    }
+  ],
+  "settings": [
+    {
+      "key": "output-depth",
+      "title": "Output depth",
+      "description": "Controls whether the skill produces concise or detailed deliverables.",
+      "type": "enum",
+      "required": false,
+      "default": "professional",
+      "options": [
+        "concise",
+        "professional",
+        "deep"
+      ]
+    },
+    {
+      "key": "quality-gate",
+      "title": "Quality gate",
+      "description": "Require the Skill to run its quality gate before final response.",
+      "type": "boolean",
+      "required": false,
+      "default": true,
+      "options": []
+    },
+    {
+      "key": "evidence-level",
+      "title": "Evidence level",
+      "description": "How much validation/evidence the Skill should include.",
+      "type": "enum",
+      "required": false,
+      "default": "standard",
+      "options": [
+        "light",
+        "standard",
+        "strict"
+      ]
+    }
+  ],
+  "verification": {
+    "level": "official",
+    "reviewedBy": "xr-core",
+    "reviewedAt": "2026-06-30"
+  }
+}

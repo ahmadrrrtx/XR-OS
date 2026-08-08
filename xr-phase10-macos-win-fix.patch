@@ -1,0 +1,180 @@
+From fd5f18b1d561a3d7f3a9e3cc2b4d38d56efc91d6 Mon Sep 17 00:00:00 2001
+From: F <f@f.local>
+Date: Thu, 6 Aug 2026 12:01:13 +0000
+Subject: [PATCH] =?UTF-8?q?fix(ci):=20parity=20runner=20=E2=80=94=20bash?=
+ =?UTF-8?q?=203.2=20(macOS)=20silent=20death=20+=20Windows=20--parallel=20?=
+ =?UTF-8?q?crashes?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+macOS (ships bash 3.2) failed fast and silently at the suite step: the
+runner used `set -u` plus `PARALLEL=(); "${PARALLEL[@]}"`. Expanding an
+EMPTY array under nounset throws 'unbound variable' on bash < 4.4
+(fixed only in 4.4; macOS still ships 3.2), killing the script before any
+segment error — exactly the observed macOS signature (exit 1, no failure
+output, ~19s). Windows additionally failed in 5 segments under
+--parallel=2 (bun worker processes crash on Windows).
+
+This revision:
+- removes set -u and ALL array expansions (plain string flag): identical
+  behavior on bash 3.2 and 5.x;
+- drops --parallel on Windows: back to the proven single-process-per-
+  segment behavior that completed 214/214 files (the original crash-class
+  retry stays for intermittent bun teardown crashes);
+- replaces mktemp with mkdir -p (BSD vs GNU mktemp template differences);
+- CRLF-safe fail-summary detection (tr -d '\r');
+- every ::error:: names its segment and the executed-files guard also emits
+  ::error::, so a red job is always self-diagnosing;
+- fails closed when the parity authority lists zero files.
+
+Verified on a fresh clone at this tree: parity-suite-runner.sh linux
+exit 0, 218/218 files, 0 errors; full 'bun run ci' exit 0.
+---
+ scripts/parity-suite-runner.sh | 70 ++++++++++++++++++++--------------
+ 1 file changed, 42 insertions(+), 28 deletions(-)
+
+diff --git a/scripts/parity-suite-runner.sh b/scripts/parity-suite-runner.sh
+index 2efdfcf..70a39f4 100644
+--- a/scripts/parity-suite-runner.sh
++++ b/scripts/parity-suite-runner.sh
+@@ -6,10 +6,11 @@
+ # deliberate addition: a segment whose `bun test` process dies WITHOUT
+ # reporting any test failure is retried ONCE with a fresh process.
+ #
+-# Why: bun-on-Windows intermittently crashes in transpiler/GC/teardown under
+-# accumulated load (documented in the workflow comment: "win32 exit 3 at
+-# ~85s — no test-failure output"). Segmentation already bounds this; a single
+-# crash-class retry with a brand-new process absorbs the remaining flake.
++# Why: bun test processes intermittently die on hosted runners in
++# transpiler/GC/teardown under accumulated load (documented in the workflow
++# comment: "win32 exit 3 at ~85s — no test-failure output"). Segmentation
++# already bounds this; a single crash-class retry with a brand-new process
++# absorbs the remaining flake.
+ #
+ # Honesty contract (Art. XX.4 / Commandment 2):
+ #   - A segment that reports ANY test failure (any "(fail)" line or a summary
+@@ -17,41 +18,53 @@
+ #   - Only a non-zero exit with ZERO test failures is treated as a process
+ #     crash and retried. If the retry also fails, the segment FAILS and its
+ #     full captured output is printed.
+-#   - Every segment's output is captured and echoed, so a failing segment
+-#     always names itself (no silent loss).
++#   - Every failure is emitted as a ::error:: annotation that NAMES the
++#     segment, so a red job is always self-diagnosing.
+ #   - The executed-files guard is unchanged: RAN must equal EXPECTED or the
+ #     step fails (a file can never silently vanish).
++#   - If the parity authority produces no files, the step FAILS (fail closed)
++#     instead of silently running nothing.
++#
++# Portability notes (macOS ships bash 3.2; Linux GitHub runners ship bash 5.x):
++#   - NO `set -u`: in bash < 4.4, expanding an EMPTY array ("${a[@]}") under
++#     set -u raises "unbound variable" and kills the script silently. This
++#     script avoids arrays and empty-array expansion entirely (a plain string
++#     flag instead), so it behaves identically on bash 3.2 and 5.x.
++#   - No GNU-only tools: uses only grep -E (POSIX ERE), tr, cut, sort, wc,
++#     mkdir — all present on macOS and Linux.
+ #
+ # Usage: bash scripts/parity-suite-runner.sh <linux|darwin|win32>
+ 
+-set -u
+-
+-OS="${1:?usage: parity-suite-runner.sh <linux|darwin|win32>}"
++# Fail fast if the OS argument is missing (explicit, not a nounset trap).
++: "${1:?usage: parity-suite-runner.sh <linux|darwin|win32>}"
++OS="$1"
+ 
+ FILES=$(bun run scripts/platform-parity.ts --os "$OS" --args)
+ EXPECTED=$(echo "$FILES" | wc -w)
+ echo "running $EXPECTED test files (per-directory segments, one computation authority)"
+ 
++if [ "$EXPECTED" -eq 0 ]; then
++  echo "::error::platform-parity produced no test files for $OS — refusing to run an empty suite (fail closed, Art. XX.4)"
++  exit 1
++fi
++
+ RAN=0
+ STATUS=0
+-LOGDIR=$(mktemp -d "${TMPDIR:-/tmp}/xr-parity-XXXXXX")
++# No mktemp dependency: a per-run dir under the OS temp dir. mkdir -p is
++# portable (mktemp templates differ between BSD/macOS and GNU/Linux).
++LOGDIR="${TMPDIR:-/tmp}/xr-parity-$$"
++mkdir -p "$LOGDIR" || {
++  echo "::error::cannot create log dir $LOGDIR"
++  exit 1
++}
+ trap 'rm -rf "$LOGDIR"' EXIT
+ 
+-# On Windows, cap worker-process parallelism: the documented crash class is
+-# load-driven (transpiler/GC/teardown under accumulated load), so reducing
+-# concurrent processes materially lowers the odds while staying fast enough.
+-if [ "$OS" = "win32" ]; then
+-  PARALLEL=(--parallel=2)
+-else
+-  PARALLEL=()
+-fi
+-
+ # Run one segment. Return 0 on success; on a crash-class exit (non-zero with
+ # zero test failures) retry once with a fresh process before giving up.
+ run_segment() {
+-  local seg="$1" out="$2"
++  local seg="$1" out="$2" label="$3"
+   # shellcheck disable=SC2086
+-  bun test "${PARALLEL[@]}" $(echo "$seg") >"$out" 2>&1
++  bun test $(echo "$seg") >"$out" 2>&1
+   local code=$?
+   if [ "$code" -eq 0 ]; then
+     cat "$out"
+@@ -59,11 +72,12 @@ run_segment() {
+   fi
+ 
+   # Crash-class detection: no per-test failures AND no non-zero fail summary.
+-  if ! grep -qE '\(fail\)' "$out" && ! grep -qE '^[[:space:]]*[1-9][0-9]*[[:space:]]+fail$' "$out"; then
+-    echo "::warning::segment exit code ${code} with 0 test failures (bun process crash/teardown class) — retrying once with a fresh process"
++  # `tr -d '\r'` normalizes Windows CRLF so the summary regex matches.
++  if ! grep -qE '\(fail\)' "$out" && ! tr -d '\r' <"$out" | grep -qE '^[[:space:]]*[1-9][0-9]*[[:space:]]+fail$'; then
++    echo "::warning::$label exit code ${code} with 0 test failures (bun process crash/teardown class) — retrying once with a fresh process"
+     cat "$out"
+     # shellcheck disable=SC2086
+-    bun test "${PARALLEL[@]}" $(echo "$seg") >"$out" 2>&1
++    bun test $(echo "$seg") >"$out" 2>&1
+     code=$?
+     if [ "$code" -eq 0 ]; then
+       cat "$out"
+@@ -71,7 +85,7 @@ run_segment() {
+     fi
+   fi
+ 
+-  echo "::error::suite segment FAILED (exit ${code}) — full output:"
++  echo "::error::$label FAILED (exit ${code}) — full output:"
+   cat "$out"
+   return "$code"
+ }
+@@ -82,7 +96,7 @@ for G in $XR_SEGDIRS; do
+   N=$(echo "$SEG" | wc -l)
+   RAN=$((RAN + N))
+   echo "::group::suite segment $G/ — $N files"
+-  run_segment "$SEG" "$LOGDIR/$(echo "$G" | tr '/' '_').log" || STATUS=1
++  run_segment "$SEG" "$LOGDIR/$(echo "$G" | tr '/' '_').log" "suite segment $G/" || STATUS=1
+   echo "::endgroup::"
+ done
+ 
+@@ -91,13 +105,13 @@ if [ -n "$ROOTSEG" ]; then
+   N=$(echo "$ROOTSEG" | wc -l)
+   RAN=$((RAN + N))
+   echo "::group::suite segment test/ (root) — $N files"
+-  run_segment "$ROOTSEG" "$LOGDIR/root.log" || STATUS=1
++  run_segment "$ROOTSEG" "$LOGDIR/root.log" "suite segment test/ (root)" || STATUS=1
+   echo "::endgroup::"
+ fi
+ 
+ echo "executed $RAN of $EXPECTED files"
+ if [ "$RAN" -ne "$EXPECTED" ]; then
+-  echo "SEGMENT GUARD FAILED: $RAN != $EXPECTED — a file silently vanished (Art. XX.4)"
++  echo "::error::SEGMENT GUARD FAILED: ran $RAN of $EXPECTED files — a file silently vanished (Art. XX.4)"
+   exit 1
+ fi
+ exit $STATUS
+-- 
+2.47.3
+

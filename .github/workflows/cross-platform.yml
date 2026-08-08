@@ -1,0 +1,78 @@
+# =============================================================================
+# XR Phase 9 · T4 — Cross-platform CI at FULL parity (macOS + Windows + Linux).
+#
+# "Supported" means validated — never "imports compile". Every OS family runs
+# the SAME three gates from ONE computation source:
+#
+#   1. typecheck          (bunx tsc --noEmit)
+#   2. full unit suite    minus ONLY the documented exclusions in
+#                         test/platform/exclusions.json — each with a reason,
+#                         each guarded by `platform-parity.ts --validate` so a
+#                         test can never vanish silently (Art. XX.4/XX.5)
+#   3. golden path        (hermetic install → answer → restart → resume →
+#                          answer → uninstall, asserting real effects)
+#
+# The support matrix (docs/release/SUPPORT_MATRIX.md) claims exactly what these
+# jobs prove — `partial` is never rounded up to `supported`.
+# =============================================================================
+name: Cross-Platform CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  parity:
+    name: ${{ matrix.osName }} — full parity (typecheck + suite + golden path)
+    runs-on: ${{ matrix.runsOn }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { osName: "Linux (reference)", runsOn: ubuntu-latest, bunOs: linux }
+          - { osName: "macOS", runsOn: macos-latest, bunOs: darwin }
+          - { osName: "Windows", runsOn: windows-latest, bunOs: win32 }
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --ignore-scripts
+      - name: Exclusion manifest validates (no silent skips)
+        run: bun run scripts/platform-parity.ts --validate
+      - name: Typecheck
+        run: bunx tsc --noEmit
+      - name: Full unit suite for this OS (one computation authority)
+        shell: bash
+        run: |
+          # ONE computation authority for WHAT runs: scripts/platform-parity.ts.
+          # HOW it runs: per-directory segments via scripts/parity-suite-runner.sh.
+          # A single 214-file monolithic `bun test` process intermittently dies
+          # mid-run on hosted runners (win32 exit 3 at ~85s; linux exit 1 at
+          # ~68s — no test-failure output, matching bun-on-Windows crash classes
+          # in transpiler/GC/teardown under accumulated load). Fresh process per
+          # segment caps heap/lifetime pressure, keeps every gate identical, echoes
+          # the segment name before running it, and retries a segment ONCE when it
+          # exits non-zero with ZERO test failures (crash class) — a segment with
+          # any real test failure fails immediately and prints its full output.
+          # The count guard makes a silent skip impossible (Art. XX.4/XX.5):
+          # executed files MUST equal the authority's list.
+          bash scripts/parity-suite-runner.sh ${{ matrix.bunOs }}
+      - name: Golden path (hermetic)
+        shell: bash
+        run: bun run golden-path
+        env:
+          HOME: /tmp/xr-cross-${{ matrix.bunOs }}-home
+          XR_HOME: /tmp/xr-cross-${{ matrix.bunOs }}-data

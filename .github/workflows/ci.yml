@@ -1,0 +1,398 @@
+# =============================================================================
+# XR — Continuous Integration (Phase 0.7)
+#
+# Every pull request targeting `main` runs the full quality battery:
+#
+#   1. typecheck     — bunx tsc --noEmit        (static type safety)
+#   2. test          — bun test                 (unit + integration suite)
+#   3. release-check — bun run release:check     (identity invariant: all six
+#                                                 stamped surfaces must match
+#                                                 release.manifest.json)
+#   3b. claim-lint   — bun run claim-lint        (no unsupported public claim;
+#                                                 evidence + expiry required)
+#   4. baseline      — bun run baseline:inventory (Phase 0 source-derived inventory)
+#   4b. website      — npx tsc --noEmit && npm run build   (website/ is a separate
+#                                                 Next.js project the root
+#                                                 tsconfig does not cover)
+#   4c. boundaries   — bun run boundaries (acyclic deps + the enforced L0-L6
+#                      boundary table) and bun run size-gate (no module over
+#                      threshold without an owned split plan)   [Phase 2 - T7/T8]
+#   5. quality-gate  — aggregation job; THIS is the check to mark as required
+#                      in branch protection so a failure in any of the above
+#                      blocks the merge (OpenHands pattern).
+#
+# Triggered on every pull_request to main and every push to main; also supports
+# manual runs via workflow_dispatch.
+#
+# Design notes:
+#   - Bun version is pinned by the `packageManager: bun@1.3.14` field in
+#     package.json and `.bun-version`; oven-sh/setup-bun reads package metadata
+#     as the single source of truth for CI toolchain setup.
+#   - Dependencies are installed with --frozen-lockfile --ignore-scripts: the
+#     PR fails fast if bun.lock and package.json disagree, and NO dependency
+#     install script ever runs in CI (Phase 4 · T6 supply-chain hygiene).
+#   - The global Bun cache (~/.bun/install/cache) is cached between runs, keyed
+#     on the lockfile hash.
+#   - `bun test` automatically emits GitHub Actions annotations for failures.
+#   - permissions is restricted to contents:read (least privilege).
+#   - concurrency cancels superseded runs on PR branches to save runner time,
+#     but always lets runs on main complete (auditability of every merge).
+# =============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  # ── 1. Static type safety ──────────────────────────────────────────────────
+  typecheck:
+    name: Typecheck (tsc --noEmit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun (packageManager-pinned)
+        uses: oven-sh/setup-bun@v2
+
+      - name: Cache Bun global install cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install dependencies (frozen lockfile)
+        run: bun install --frozen-lockfile --ignore-scripts
+
+      - name: Typecheck
+        run: bunx tsc --noEmit
+
+  # ── 2. Identity + claim invariants: one source of truth for both ───────────
+  # Phase 0 · T1/T2. The previous job checked only 3 of 6 surfaces, which is why
+  # README (3.1.6) and the installers (1.0.0) drifted from version.ts (7.0.0)
+  # while CI stayed green. release:check validates every declared surface, and
+  # claim-lint fails on any public claim without evidence.
+  truth-gate:
+    name: Truth gate (release:check + claim-lint)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun (packageManager-pinned)
+        uses: oven-sh/setup-bun@v2
+
+      # No bun install needed: both scripts use only node builtins.
+      - name: Verify every surface is stamped from release.manifest.json
+        run: bun run release:check
+
+      - name: Verify no unsupported public claim
+        run: bun run claim-lint
+
+  # ── 3. Phase 0 source-derived baseline inventory ──────────────────────────
+  baseline:
+    name: Baseline inventory
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun (packageManager-pinned)
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies (frozen lockfile)
+        run: bun install --frozen-lockfile --ignore-scripts
+
+      - name: Generate source-derived inventory
+        run: bun run baseline:inventory
+
+  # ── 3b. Website build ──────────────────────────────────────────────────────
+  # The website is a separate Next.js project: the root tsconfig only includes
+  # src/** and test/**, so NOTHING in website/ was type-checked or built by CI.
+  # Claim-lint reads those files as text, which catches false claims but not a
+  # broken import or a render error. This job closes that gap.
+  website:
+    name: Website (typecheck + build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: website
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Production build (static render of every route)
+        run: npm run build
+
+  # ── 4. Test suite ──────────────────────────────────────────────────────────
+  test:
+    name: Test (bun test)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun (packageManager-pinned)
+        uses: oven-sh/setup-bun@v2
+
+      - name: Cache Bun global install cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install dependencies (frozen lockfile)
+        run: bun install --frozen-lockfile --ignore-scripts
+
+      - name: Run test suite
+        run: bun test
+
+  # ── 5. Phase 1 reliability suite (concurrency, crash-injection, idempotency,
+  #       migrations, RPO/RTO, golden path) ─────────────────────────────────
+  reliability:
+    name: Reliability (concurrency / crash / idempotency / RPO/RTO)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Bun (packageManager-pinned)
+        uses: oven-sh/setup-bun@v2
+      - name: Cache Bun global install cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+      - name: Install dependencies (frozen lockfile)
+        run: bun install --frozen-lockfile --ignore-scripts
+      - name: Reliability suite
+        run: bun run reliability:test
+
+
+  # ── 5b. Phase 2 architectural gates ────────────────────────────────────────
+  # Art. V.2: "Dependency direction is explicit and acyclic; an architectural
+  # test enforces it." Art. V.3: no module over the size threshold without an
+  # owned plan. Both rule sets have exactly one source of truth:
+  #   .dependency-cruiser.cjs      — the L0-L6 boundary table + no-circular
+  #   docs/phase2/SIZE-WAIVERS.json — the owned split plans
+  # test/architecture/*.test.ts enforces the SAME rules inside `bun test`, so a
+  # contributor sees the failure locally, and the gate survives even if the
+  # optional dev dependency is unavailable.
+  boundaries:
+    name: Architecture (boundaries + size gate)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Bun (packageManager-pinned)
+        uses: oven-sh/setup-bun@v2
+      - name: Cache Bun global install cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+      - name: Install dependencies (frozen lockfile)
+        run: bun install --frozen-lockfile --ignore-scripts
+      - name: Acyclic dependencies + L0-L6 boundary table
+        run: bun run boundaries
+      - name: Module size gate (owned split plans)
+        run: bun run size-gate
+
+  # ── 5d. Phase 8 API contract gates ────────────────────────────────────────
+  # Art. XI/XVIII/XXVII: the generated OpenAPI/JSON-Schema artifact, the typed
+  # client, and the breaking-change detector must never drift from the route
+  # contract. All three regenerate from source and byte-compare.
+  api-contract:
+    name: API contract (schema + client + compat)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Bun (packageManager-pinned)
+        uses: oven-sh/setup-bun@v2
+      - name: Install dependencies (frozen lockfile)
+        run: bun install --frozen-lockfile --ignore-scripts
+      - name: Generated OpenAPI artifact is in sync
+        run: bun run api:schema:check
+      - name: Generated typed client is in sync
+        run: bun run client:check
+      - name: No breaking API change without the deprecation path
+        run: bun run api:compat
+
+  # ── 5e. Phase 8 accessibility gate ────────────────────────────────────────
+  # Art. X: WCAG 2.2 AA is claimed only with the automated half green in CI
+  # (axe-core over every panel + contrast gate + structural tests + real
+  # keyboard flows) — the manual half is recorded in docs/a11y/CONFORMANCE.md.
+  a11y:
+    name: Accessibility (axe + keyboard, WCAG 2.2 AA)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Bun (packageManager-pinned)
+        uses: oven-sh/setup-bun@v2
+      - name: Install dependencies (frozen lockfile)
+        run: bun install --frozen-lockfile --ignore-scripts
+      - name: Install Playwright chromium (headless)
+        run: bunx playwright install chromium --with-deps
+      - name: Live a11y verification (browser required here)
+        run: XR_A11Y_REQUIRE_BROWSER=1 bun test test/a11y/
+
+  # ── 5f. Phase 8 observability-overhead profile gate ────────────────────────
+  # Art. XII: no startup regression — CPU-profiles CLI cold starts with
+  # telemetry wiring present and gates wall time + CPU against the baseline.
+  profiling:
+    name: Profile gate (startup overhead)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Bun (packageManager-pinned)
+        uses: oven-sh/setup-bun@v2
+      - name: Install dependencies (frozen lockfile)
+        run: bun install --frozen-lockfile --ignore-scripts
+      - name: Profile gate
+        run: bun run profile:gate
+
+  # ── 6. Mutation gate on trust/execution/persistence/credential modules ───
+  mutation-gate:
+    name: Mutation gate (T8)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Bun (packageManager-pinned)
+        uses: oven-sh/setup-bun@v2
+      - name: Install dependencies (frozen lockfile)
+        run: bun install --frozen-lockfile --ignore-scripts
+      - name: Mutation gate
+        run: bun run mutation:run
+
+  # ── 5c. Phase 3 performance gates ──────────────────────────────────────────
+  # Art. XII · Rule 2: "No perf claim without a budget and a regression gate."
+  # The perf gate:
+  #   · measures the Phase 3 scenario matrix (fast path + doctor + route +
+  #     dashboard + retrieval@100k) in an isolated XR_HOME;
+  #   · fails when p95 exceeds the PUBLISHED budget (scripts/perf/budgets.json)
+  #     or the VERSIONED BASELINE (docs/perf/baseline-*.json) by >10% without
+  #     a ratified waiver (docs/perf/WAIVERS.md).
+  # The hot-path lint enforces zero sync FS/process I/O on the CLI fast path.
+  # The perf tests (test/perf/*) run inside `bun test` as well, including the
+  # seeded-regression proof that the gate is not vacuous.
+  perf-gate:
+    name: Performance (budgets + regression gate)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Bun (packageManager-pinned)
+        uses: oven-sh/setup-bun@v2
+      - name: Cache Bun global install cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+      - name: Install dependencies (frozen lockfile)
+        run: bun install --frozen-lockfile --ignore-scripts
+      # NOTE (Phase-8 supply/perf fix): the "same-host regression band" cache
+      # was removed. The gate's warn-only/block flip is triggered by the mere
+      # PRESENCE of a previous host baseline — on ephemeral GitHub runners a
+      # restored cache comes from a DIFFERENT VM, which broke the same-host
+      # assumption and made the job pass on a PR's first run then fail its
+      # second (same tree). Without the cache every CI run is a first run:
+      # the band stays warn-only (visible in logs) while the CONSTITUTIONAL
+      # gate — absolute budgets in scripts/perf/budgets.json — still blocks.
+      # The band keeps working unchanged on persistent/self-hosted runners.
+      - name: Hot-path sync-I/O lint
+        run: bun run hot-path-lint
+      - name: Performance regression gate (budgets + baseline)
+        run: bun run perf:gate --samples 21 --mode source --baseline docs/perf/baseline-7.0.1-source.json
+
+  # ── 5g. Phase 8 DX gates: unit tier budget + ownership map sync ───────────
+  # The contributor inner loop must stay under 5 s (measured); the public
+  # ownership map must never drift from CODEOWNERS.
+  unit-tier:
+    name: DX (unit tier <5s + ownership map)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Bun (packageManager-pinned)
+        uses: oven-sh/setup-bun@v2
+      - name: Install dependencies (frozen lockfile)
+        run: bun install --frozen-lockfile --ignore-scripts
+      - name: Ownership map is in sync with CODEOWNERS
+        run: bun run scripts/ownership-map.ts --check
+      - name: Unit tier completes inside its 5s budget
+        run: bun run scripts/unit-tier.ts --budget=5000
+
+  # ── 6. Aggregation: the single status check required by branch protection ──
+  # Runs even when a dependency fails (if: always()), then asserts every
+  # upstream job succeeded. Mark "Quality Gate" as a required status check in
+  # Settings → Branches so failing typecheck/tests/version-sync blocks merges.
+  quality-gate:
+    name: Quality Gate
+    if: always()
+    needs: [typecheck, truth-gate, baseline, website, test, reliability, boundaries, mutation-gate, perf-gate, api-contract, a11y, profiling, unit-tier]
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify all required jobs succeeded
+        run: |
+          results="${{ join(needs.*.result, ' ') }}"
+          echo "Upstream job results: ${results}"
+          for r in ${results}; do
+            if [ "${r}" != "success" ]; then
+              echo "::error::A required job did not succeed (result: ${r}). Merge blocked."
+              exit 1
+            fi
+          done
+          echo "All required checks passed — merge may proceed."

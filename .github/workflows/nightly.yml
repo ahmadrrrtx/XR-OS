@@ -1,0 +1,136 @@
+# =============================================================================
+# XR Phase 1 · T6 — Nightly golden path (Linux + container)
+#
+# Every night: run the full golden path (install → verify → first answer →
+# restart → resume → second answer → uninstall) twice:
+#   1. directly on the Linux runner;
+#   2. inside the XR container image (proves the shipped image carries a
+#      working, durable runtime — the dashboard is not the only surface).
+# Failures emit the FAIL <step>: <reason> diagnostics from golden-path.ts.
+# =============================================================================
+name: Nightly Golden Path
+
+on:
+  schedule:
+    - cron: "23 2 * * *" # 02:23 UTC daily
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  golden-path-linux:
+    name: Golden path (Linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun (packageManager-pinned)
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies (frozen lockfile)
+        run: bun install --frozen-lockfile --ignore-scripts
+
+      - name: Run golden path
+        run: bun run golden-path
+        env:
+          HOME: /tmp/xr-nightly-home
+          XR_HOME: /tmp/xr-nightly-data
+
+  golden-path-container:
+    name: Golden path (container)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t xr:nightly .
+
+      - name: Run golden path inside the container
+        run: |
+          # The image mounts the repo as the workdir with the data volume at
+          # /data; golden-path runs the CLI + runtime against a hermetic home.
+          docker run --rm \
+            -e HOME=/tmp/xr-home \
+            -e XR_HOME=/tmp/xr-data \
+            -v "$PWD":/app \
+            -w /app \
+            xr:nightly bun run scripts/golden-path.ts
+
+  # ── Phase 8 · T4 ────────────────────────────────────────────────────────────
+  # First-task success-rate survey: 20 fresh-machine attempts (install → boot
+  # → first answer) must succeed at ≥ 95%. Automated proxy — the human study
+  # stays pending per docs/ux/FIRST-TASK.md (honesty exception E-1); this job
+  # guards the machine-verifiable half of the requirement.
+  first-task-survey:
+    name: First-task survey (N=20, rate ≥ 0.95)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun (packageManager-pinned)
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies (frozen lockfile)
+        run: bun install --frozen-lockfile --ignore-scripts
+
+      - name: Run first-task survey
+        run: |
+          bun run scripts/first-task-survey.ts --runs=20 --target=0.95 --json | tee first-task-survey.json
+
+      - name: Upload survey evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: first-task-survey
+          path: first-task-survey.json
+          retention-days: 90
+
+  # ── Phase 9 · T6 ────────────────────────────────────────────────────────────
+  # Public Beta install-success metric: the DEFAULT DISTRIBUTION (canonical
+  # compiled binary) must install 🔒verified + smoke-clean on every supported
+  # OS family, ≥ 99% of fresh attempts. Each job builds its own canonical
+  # asset in-job (one build), generates SHA256SUMS, then runs N clean-room
+  # install attempts measured per step. The aggregate mirrors the Beta
+  # acceptance gate; the per-OS JSON artifacts ARE the installation evidence.
+  beta-install-survey:
+    name: Beta install survey — ${{ matrix.osName }} (≥ 99%)
+    runs-on: ${{ matrix.runsOn }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { osName: "Linux", runsOn: ubuntu-latest, bunOs: linux, target: "linux-x64" }
+          - { osName: "macOS", runsOn: macos-latest, bunOs: darwin, target: "darwin-arm64" }
+          - { osName: "Windows", runsOn: windows-latest, bunOs: win32, target: "windows-x64" }
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --ignore-scripts
+      - name: Build the canonical asset for this OS
+        run: bun run scripts/build-matrix.ts --targets ${{ matrix.target }} --out survey-assets
+      - name: Generate checksum manifest (the signable unit)
+        shell: bash
+        working-directory: survey-assets
+        run: sha256sum * > SHA256SUMS
+      - name: Run the install survey (10 fresh attempts, gate ≥ 0.99)
+        shell: bash
+        run: |
+          bun run scripts/beta-install-survey.ts --release-dir survey-assets --runs=10 --target=0.99 | tee beta-install-${{ matrix.bunOs }}.json
+      - name: Upload per-OS install evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: beta-install-${{ matrix.bunOs }}
+          path: beta-install-${{ matrix.bunOs }}.json
+          retention-days: 90

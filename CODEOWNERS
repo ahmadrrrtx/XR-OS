@@ -1,0 +1,86 @@
+# XR — Code Owners
+#
+# Every subsystem has exactly one accountable owner (Constitution: "one
+# responsibility, one owner, per subsystem"). Listed owners are requested for
+# review automatically on any PR touching these paths.
+#
+# Syntax: https://docs.github.com/articles/about-code-owners
+
+# ── Default owner for anything not matched below ────────────────────────────
+*                               @ahmadrrrtx
+
+# ── L0 Kernel: composition, lifecycle, identity, claims ─────────────────────
+# Highest-authority surfaces. Changes here need extra scrutiny.
+/src/core/                      @ahmadrrrtx
+/release.manifest.json          @ahmadrrrtx
+/scripts/release-manifest.ts    @ahmadrrrtx
+/scripts/claim-lint.ts          @ahmadrrrtx
+
+# ── Trust boundary: policy, secrets, review ─────────────────────────────────
+# Fail-closed code. Never merge without an adversarial test.
+/src/security/                  @ahmadrrrtx
+/src/trust/                     @ahmadrrrtx
+/src/integrations/credentials.ts @ahmadrrrtx
+/src/services/review-decision.ts @ahmadrrrtx
+
+# ── L1 Runtime: agent loop, execution, providers, workflow ──────────────────
+/src/execution/                 @ahmadrrrtx
+/src/workflow/                  @ahmadrrrtx
+/src/providers/                 @ahmadrrrtx
+/src/intelligence/              @ahmadrrrtx
+
+# ── L2 Platform: tools, plugins, MCP, skills ────────────────────────────────
+/src/plugins/                   @ahmadrrrtx
+/src/mcp/                       @ahmadrrrtx
+/src/skills/                    @ahmadrrrtx
+/src/tools/                     @ahmadrrrtx
+
+# ── Surfaces ────────────────────────────────────────────────────────────────
+/src/cli/                       @ahmadrrrtx
+/src/interfaces/                @ahmadrrrtx
+/src/daemon/                    @ahmadrrrtx
+
+# ── Phase 8: observability plane (Art. XXI privacy boundary) ────────────────
+# Opt-in, structural-by-default, PII-redacted telemetry. Changes here can
+# silently alter what user data leaves the process — require privacy review.
+/src/observability/             @ahmadrrrtx
+/src/commands/telemetry.ts      @ahmadrrrtx
+/test/observability/            @ahmadrrrtx
+/docs/observability/            @ahmadrrrtx
+
+# ── Phase 8: public API contract (breaking-change discipline) ───────────────
+# The OpenAPI schema, generated client, and compat gate must move together.
+/src/daemon/api/                @ahmadrrrtx
+/src/daemon/routes/contract.ts  @ahmadrrrtx
+/src/daemon/routes/registry.ts  @ahmadrrrtx
+/src/clients/                   @ahmadrrrtx
+/scripts/generate-openapi.ts    @ahmadrrrtx
+/scripts/generate-client.ts     @ahmadrrrtx
+/scripts/api-compat.ts          @ahmadrrrtx
+/docs/api/                      @ahmadrrrtx
+
+# ── Phase 8: accessibility gate & DX instruments ────────────────────────────
+/src/daemon/auth-page.ts        @ahmadrrrtx
+/test/a11y/                     @ahmadrrrtx
+/test/ux/                       @ahmadrrrtx
+/docs/a11y/                     @ahmadrrrtx
+/docs/ux/                       @ahmadrrrtx
+/scripts/ownership-map.ts       @ahmadrrrtx
+/scripts/unit-tier.ts           @ahmadrrrtx
+/scripts/first-task-survey.ts   @ahmadrrrtx
+/scripts/sus.ts                 @ahmadrrrtx
+/scripts/profile-gate.ts        @ahmadrrrtx
+
+# ── Public claims: docs, website, installers ────────────────────────────────
+# Claim-governed under Article XIX. Every change is claim-linted.
+/README.md                      @ahmadrrrtx
+/website/                       @ahmadrrrtx
+/install.sh                     @ahmadrrrtx
+/install.ps1                    @ahmadrrrtx
+/docs/release/                  @ahmadrrrtx
+
+# ── CI and supply chain ─────────────────────────────────────────────────────
+/.github/                       @ahmadrrrtx
+/Dockerfile                     @ahmadrrrtx
+/docker-compose.yml             @ahmadrrrtx
+/package.json                   @ahmadrrrtx
