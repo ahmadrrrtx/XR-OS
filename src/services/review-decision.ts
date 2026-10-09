@@ -36,8 +36,11 @@ import type { ReviewState } from "../agents/types.ts";
 export interface ReviewDecision {
   decision: ReviewState;
   reason: string;
-  /** How the decision was reached — useful for audit and debugging. */
-  source: "strict_json" | "fenced_json" | "parse_failure" | "ambiguous" | "empty";
+  /** How the decision was reached — useful for audit and debugging.
+   *  `structured` (ADR-XR-025): a deterministic emitter supplied an explicit,
+   *  well-typed verdict via `output.structured.decision` — authoritative
+   *  evidence, stronger than any text parse. */
+  source: "strict_json" | "fenced_json" | "structured" | "parse_failure" | "ambiguous" | "empty";
 }
 
 const VALID_DECISIONS = new Set<string>(["approved", "changes_requested", "rejected"]);

@@ -11,7 +11,7 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { parseReviewDecision, REVIEW_OUTPUT_CONTRACT } from "./review-decision.ts";
+import { parseReviewDecision, REVIEW_OUTPUT_CONTRACT, type ReviewDecision } from "./review-decision.ts";
 import { ServiceRegistry } from "../core/service-registry.ts";
 import { Tokens } from "../core/tokens.ts";
 import type { LifecycleHook } from "../core/lifecycle.ts";
@@ -478,9 +478,44 @@ export class MultiAgentService implements LifecycleHook {
       task.endedAt = Date.now();
       task.updatedAt = task.endedAt;
       if (task.role === "reviewer" || task.role === "security_checker") {
-        task.reviewState = this.inferReviewState(output.summary);
-        if (task.reviewState === "changes_requested" || task.reviewState === "rejected") {
-          task.blockedReason = output.summary.slice(0, 300);
+        // ADR-XR-025 — the review gate consumes a VERDICT, not prose: a
+        // deterministic checker's structured decision is authoritative evidence;
+        // a model reviewer's output must still satisfy the strict JSON contract
+        // (fail-closed parse). A gate that cannot verify its reviewer retries
+        // once with an escalated contract, then fails terminally — a silent,
+        // permanent deadlock of the whole workflow is no longer a reachable state.
+        const verdict = this.resolveReviewVerdict(output);
+        const unverified =
+          verdict.source === "parse_failure" || verdict.source === "empty" || verdict.source === "ambiguous";
+        if (unverified && task.retryCount < Math.max(1, task.maxRetries)) {
+          task.retryCount += 1;
+          task.inputs = { ...task.inputs, reviewGateEscalated: true };
+          task.outputs = output;
+          task.status = "pending";
+          task.reviewState = "pending";
+          task.startedAt = undefined;
+          task.endedAt = undefined;
+          task.blockedReason = undefined;
+          this.appendTaskEvent(task, "supervisor", "review.retry", `${task.name}: unverifiable verdict (${verdict.source}); retrying with escalated contract`, {
+            source: verdict.source,
+            attempt: task.retryCount,
+          });
+        } else {
+          task.reviewState = verdict.decision;
+          this.appendTaskEvent(task, task.agentId, "review.verdict", `${task.name} verdict: ${verdict.decision} (${verdict.source})`, {
+            decision: verdict.decision,
+            source: verdict.source,
+            reason: verdict.reason.slice(0, 300),
+          });
+          if (unverified) {
+            // Retries exhausted: the GATE failed. Terminal, honest, observable —
+            // failure class on the task, never a parked workflow (ADR-XR-005).
+            task.status = "failed";
+            task.errors.push(`review_gate_unresolved: reviewer output not verifiable after retry (${verdict.source})`);
+            task.blockedReason = verdict.reason.slice(0, 300);
+          } else if (task.reviewState === "changes_requested" || task.reviewState === "rejected") {
+            task.blockedReason = verdict.reason.slice(0, 300);
+          }
         }
       } else {
         // Phase 0 · T10 (audit finding N4): a non-reviewer task completing does
@@ -507,6 +542,32 @@ export class MultiAgentService implements LifecycleHook {
       this.emitTaskEvent(CoreEvents.AgentTaskFailed, task, record, { error: message });
       record.errors.push(`${task.taskId}:${message}`);
     }
+  }
+
+  /**
+   * ADR-XR-025 — contract the review gate.
+   *
+   * Precedence:
+   *  1. A structured verdict (`output.structured.decision`) is authoritative
+   *     evidence — this is how DETERMINISTIC emitters (the security checker)
+   *     prove their verdict. Before this fix their prose summary was parsed
+   *     instead, fail-closed to `changes_requested`, and every workflow that
+   *     carried a security_checker deadlocked (audit finding A-20).
+   *  2. Otherwise the reviewer's text must satisfy the strict JSON contract
+   *     (parseReviewDecision, fail-closed). Approval is still the only outcome
+   *     that requires an explicit, justified statement.
+   */
+  private resolveReviewVerdict(output: AgentExecutionOutput): ReviewDecision {
+    const structured = (output.structured ?? {}) as Record<string, unknown>;
+    const rawDecision = typeof structured.decision === "string" ? structured.decision.trim().toLowerCase() : undefined;
+    if (rawDecision === "approved" || rawDecision === "changes_requested" || rawDecision === "rejected") {
+      const reason =
+        output.risks && output.risks.length > 0
+          ? output.risks.join("; ").slice(0, 300)
+          : (output.summary || "deterministic verdict with no findings").slice(0, 300);
+      return { decision: rawDecision, reason, source: "structured" };
+    }
+    return parseReviewDecision(output.summary);
   }
 
   private inferReviewState(text: string): ReviewState {
@@ -538,6 +599,10 @@ export class MultiAgentService implements LifecycleHook {
       // response is parsed against, so failing closed is a contract violation
       // on their side rather than a surprise on ours.
       task.role === "reviewer" || task.role === "security_checker" ? REVIEW_OUTPUT_CONTRACT : "",
+      // ADR-XR-025 — second-and-final attempt after an unverifiable verdict.
+      task.inputs?.reviewGateEscalated === true && (task.role === "reviewer" || task.role === "security_checker")
+        ? "ESCALATION: your previous attempt did not produce a verifiable JSON verdict. This is your FINAL attempt: produce the memo, then the JSON object, and nothing after it."
+        : "",
     ]
       .filter(Boolean)
       .join("\n\n");
@@ -567,7 +632,9 @@ export class MultiAgentService implements LifecycleHook {
         return [
           "You are XR's Reviewer agent.",
           "You must critique and never execute. Separate review from generation.",
-          "Return plain text with headings: Decision: APPROVED or CHANGES_REQUESTED or REJECTED, Summary, Findings, Risks.",
+          "Return a memo with headings Summary, Findings, Risks — then END with the strict JSON decision object required by the output contract:",
+          '{"decision":"approved|changes_requested|rejected","reason":"<one sentence>"}',
+          "Output that lacks this JSON object is treated as changes_requested, and approval without a stated reason is never accepted.",
         ].join("\n");
       case "executor":
         return [

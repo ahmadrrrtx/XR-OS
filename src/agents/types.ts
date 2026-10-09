@@ -149,6 +149,8 @@ export interface WorkflowAuditEvent {
     | "review.approved"
     | "review.changes_requested"
     | "review.rejected"
+    | "review.verdict"
+    | "review.retry"
     | "handoff"
     | "note";
   message: string;
