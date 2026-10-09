@@ -56,6 +56,8 @@ jobs:
           bun run claim-lint
           bun run channel:check
           bun run typecheck
+      - name: Publish lockstep (C-D04 — tag + surfaces + registry direction)
+        run: bun run scripts/publish-lockstep.ts --tag "$GITHUB_REF_NAME" --check-npm
       - name: Parity manifest validates
         run: bun run scripts/platform-parity.ts --validate
       - name: Test floor (supply chain + trust + security + release)
@@ -279,6 +281,8 @@ jobs:
           else
             bun pm publish --provenance --tag latest
           fi
+      - name: Verify lockstep post-publish (registry MUST now equal manifest)
+        run: bun run scripts/publish-lockstep.ts --post-publish
 
   # ── 7. Docker channel (GHCR, attestations, cosign) ────────────────────────
   publish-docker:

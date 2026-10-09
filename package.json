@@ -64,7 +64,8 @@
     "client:generate": "bun run scripts/generate-client.ts --write",
     "client:check": "bun run scripts/generate-client.ts --check",
     "profile:gate": "bun run scripts/profile-gate.ts",
-    "unit-tier": "bun run scripts/unit-tier.ts"
+    "unit-tier": "bun run scripts/unit-tier.ts",
+    "lockstep:check": "bun run scripts/publish-lockstep.ts"
   },
   "repository": {
     "type": "git",
