@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "hello-device",
+  "name": "Hello Device",
+  "version": "0.1.0",
+  "author": "rrrtx",
+  "description": "First physical-world capability pack (DF-05 proposal). Treats device pins as CapabilityDescriptors behind a driver adapter seam. Simulated board by default; actuation is risk-tiered (observe/reversible/irreversible), approval-gated, and recorded to XR's tamper-evident audit chain. Hardware-unverified: see PACK_PROPOSAL.md.",
+  "type": "integration",
+  "entrypoint": "index.ts",
+  "permissions": [],
+  "capabilities": [
+    {
+      "kind": "command",
+      "name": "probe",
+      "description": "Probe the active device driver and print the pin map."
+    },
+    {
+      "kind": "tool",
+      "name": "status",
+      "description": "Driver probe result, board pin map, and device-journal summary."
+    },
+    {
+      "kind": "tool",
+      "name": "read",
+      "description": "Read an input/sensor pin (observe tier). Never actuates."
+    },
+    {
+      "kind": "tool",
+      "name": "write",
+      "description": "Write an output pin (approval-gated; irreversible class requires explicit confirm)."
+    },
+    {
+      "kind": "tool",
+      "name": "blink",
+      "description": "Blink a reversible output pin N times (approval-gated)."
+    },
+    {
+      "kind": "tool",
+      "name": "select_driver",
+      "description": "Switch the device driver adapter value (approval-gated). LAW 17: drivers are values, not architecture."
+    },
+    {
+      "kind": "tool",
+      "name": "journal",
+      "description": "Read the hash-chained device action journal (evidence artifact, read-only)."
+    }
+  ],
+  "dependencies": [],
+  "compatibility": ">=7.0.0 <8.0.0",
+  "apiVersion": 1,
+  "source": {
+    "kind": "builtin",
+    "url": "https://github.com/ahmadrrrtx/xr/tree/main/plugins/hello-device"
+  },
+  "trustLevel": "official",
+  "homepage": "https://github.com/ahmadrrrtx/xr",
+  "keywords": [
+    "device",
+    "robotics-seam",
+    "actuation",
+    "example"
+  ]
+}
