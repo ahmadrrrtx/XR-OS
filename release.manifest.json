@@ -220,6 +220,22 @@
     {
       "pattern": "Audit\\s+logs\\s*\\(",
       "reason": "Audit retention is configurable per event class (src/enterprise/audit/retention.ts), not a fixed hosted-tier feature."
+    },
+    {
+      "pattern": "AI\\s+OS\\b|AI\\s+Operating\\s+System|Business\\s+Operating\\s+System",
+      "reason": "'AI OS' is banned as a product claim until the Ω-7 gates are met (ADR-XR-029, V-01). Product positioning: local-first agent runtime; OS language only as gated roadmap text."
+    },
+    {
+      "pattern": "provable\\s+security",
+      "reason": "XR makes no provable-security claim: the shipped mechanism is deterministic input screening + fail-closed policy gate (ADR-XR-029, V-02)."
+    },
+    {
+      "pattern": "injection\\s+benchmark",
+      "reason": "The guard is deterministic screening + policy gate, not a benchmark result (audit #13, ADR-XR-029)."
+    },
+    {
+      "pattern": "\\b26\\s+built-?in\\s+providers?\\b|built-?in\\s+providers?",
+      "reason": "Correct phrasing: '26 provider presets (16 hosted + 10 local runtimes; 6 native adapters)' — presets are configuration, native adapters are code (ADR-XR-029, V-06)."
     }
   ],
   "supervisedTerms": [

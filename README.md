@@ -222,9 +222,9 @@ xr serve             # start local dashboard + chat in browser
 
 |  | Most AI agents | **XR** |
 |---|---|---|
-| **Provider** | locked to vendor | BYOK — **any of 26 built-in providers** (16 hosted + 10 local runtimes), or **fully local** via Ollama, LM Studio, llama.cpp, Jan, LocalAI, vLLM, GPT4All, KoboldCPP, Text Generation WebUI, SGLang |
+| **Provider** | locked to vendor | BYOK — **26 provider presets** (16 hosted + 10 local runtimes; **6 native adapters**), or **fully local** via Ollama, LM Studio, llama.cpp, Jan, LocalAI, vLLM, GPT4All, KoboldCPP, Text Generation WebUI, SGLang |
 | **Cost** | "soft" warnings | **hard ceiling enforced in code** (`checkBeforeStep()`) |
-| **Security** | trust us | **deterministic injection benchmark**, signed block-rate report |
+| **Security** | trust us | **deterministic input screening + fail-closed policy gate**, publishable block-rate report |
 | **Audit** | scrollback only | **SHA-256 hash chain** — tamper-evident, offline, free |
 | **Terminal UI** | raw prompts | **Claude Code–style TUI** — spinner, history, status bar, slash commands |
 | **Browser UI** | cloud dashboard | **self-hosted chat + dashboard** at `localhost:3141` |
@@ -239,7 +239,7 @@ xr serve             # start local dashboard + chat in browser
 | **Voice** | silent cloud listener | **Stage 8 Voice Stack** — disabled by default, push-to-talk default, local Whisper/Piper/Kokoro/system adapters, explicit cloud consent |
 | **Extensibility** | arbitrary packages or hardcoded integrations | **XR 2.1 Skills Marketplace** + **Stage 10 Plugin Platform** + **Stage 11 MCP Platform** — install professional AI capabilities with manifests, permissions, dependencies, SDK, backend registry, updates, rollback, signing hooks, and App Store-style UI |
 | **Multi-agent orchestration** | one big agent with tool spam | **Stage 12 Multi-Agent Runtime** — supervisor, planner, researcher, builder, reviewer, executor, synthesizer, memory manager, security checker |
-| **Runtime** | procedural script | **AI OS Kernel** with DI, Lifecycle management, and a persisted multi-agent workflow store |
+| **Runtime** | procedural script | **agent-runtime kernel** with DI, Lifecycle management, and a persisted multi-agent workflow store |
 
 ---
 
@@ -321,7 +321,7 @@ A **mission-control dashboard** with 16 navigation panels:
 | **Status** | System health grid |
 | **Budget** | Spend controls, recent cost events, by-model and by-provider usage, soft-cap settings |
 | **Workspaces** | Create and switch isolated XR workspaces |
-| **Providers** | All 26 built-in providers with status, tier, key configuration, plus provider manager controls |
+| **Providers** | All 26 provider presets (16 hosted + 10 local runtimes; 6 native adapters) with status, tier, key configuration, plus provider manager controls |
 | **Models** | Local runtime status, installed models |
 | **Memory** | Health cards (total/expired/never-recalled), live search, all entries with inline delete, expiry badges |
 | **Research** | Research mode quick reference |
@@ -657,7 +657,7 @@ Doctor includes Voice Stack health: capture tools, playback tools, device count,
 
 ## 🏛️ Foundation Runtime — Current Runtime Surfaces
 
-XR has evolved into a **True AI Operating System**. The v1.0 kernel introduces:
+XR is a governed **AI agent runtime** with kernel-grade substrate services (DI, lifecycle, single-writer state, tamper-evident audit). XR does not claim to be an operating system — that language is reserved for the gated Ω-7 roadmap (ADR-XR-029). The v1.0 kernel introduces:
 
 - **Service Container (DI)** — lightweight dependency injection managing Agent, Budget, Provider, Plugins with a strictly controlled lifecycle
 - **Lifecycle Management** — formal `Bootstrap → Start → Stop` sequence
@@ -787,10 +787,13 @@ xr --budget 0.10 "write me a full React app"
 
 The agent **literally cannot exceed your budget.** `checkBeforeStep()` runs before every model call and blocks if the next step would breach the ceiling.
 
-### 🛡️ Provable Security
+### 🛡️ Deterministic Screening + Policy Gate
+
+XR makes no provable-security claim. What ships is deterministic input screening plus a
+fail-closed policy gate, with a publishable block-rate report:
 
 ```bash
-xr test --attacks --json    # signed, publishable block-rate report
+xr test --attacks --json    # publishable block-rate report
 ```
 
 ### 🔒 Tamper-Evident Audit Log
@@ -842,7 +845,7 @@ swapped without breaking its content hash. See
 
 ## 📡 Providers
 
-XR supports **26 built-in providers** — 16 hosted and 10 local runtimes. Swap anytime — no restart, no re-config.
+XR ships **26 provider presets** — 16 hosted API presets and 10 local-runtime presets, of which **6 have dedicated native adapters** (counted from `src/providers/presets.ts` and `src/providers/native/`). Swap anytime — no restart, no re-config.
 
 > Counted from `PRESETS` in `src/providers/presets.ts`. Provider count is not a measure of product quality and is deliberately not scored by `xr evaluate`.
 
@@ -1351,7 +1354,7 @@ The **Security (XR Shield)** control cockpit is completely integrated into the w
 
 **Status: XR 15 is implemented on `main` and ready for use.**
 
-XR 15 transforms XR from an AI agent into an **AI Business Operating System**. It unifies CRM, Sales, Marketing, Support, Projects, Knowledge, Finance, HR, Analytics, Automation, Scheduling, Communication, Documents, Meetings, and AI Workers — all behind one intelligent AI platform.
+XR 15 adds an optional **business-workflow extension** (`@rrrtx/xr-business`, default-excluded from core builds). It bundles CRM, Sales, Marketing, Support, Projects, Knowledge, Finance, HR, Analytics, Automation, Scheduling, Communication, Documents, Meetings, and AI Workers — all behind one agent platform.
 
 | Phase | Status | What shipped |
 | --- | --: | --- |
