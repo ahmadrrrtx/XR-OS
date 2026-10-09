@@ -19,6 +19,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 import { validatePlugin } from "../../src/plugins/loader.ts";
+import { SENSITIVE_PERMISSIONS, type PermissionScope } from "../../src/plugins/types.ts";
 import { loadPlugin } from "../../src/plugins/loader/sandbox.ts";
 import { loadConfig } from "../../src/config/config.ts";
 import { Store } from "../../src/state/workspace-store.ts";
@@ -71,11 +72,16 @@ function freshContributions() {
 // ── 1. Manifest conformance ──────────────────────────────────────────────────
 
 describe("hello-device manifest", () => {
-  test("validates under the strict plugin validator with ZERO permissions", () => {
+  test("validates under the strict plugin validator with exactly the `device` seam scope", () => {
     const v = validatePlugin(PACK_DIR);
     expect(v.ok).toBe(true);
     expect(v.manifest?.id).toBe("hello-device");
-    expect(v.manifest?.permissions).toEqual([]);
+    // PACK_PROPOSAL.md §4 seam 1: the pack declares the `device` scope and
+    // nothing else. It is NOT a sensitive scope, so the per-tool approval
+    // lattice below stays authoritative (adaptTool only blanket-forces
+    // approval for SENSITIVE grants).
+    expect(v.manifest?.permissions).toEqual(["device"]);
+    expect(SENSITIVE_PERMISSIONS.has("device" as PermissionScope)).toBe(false);
     expect(v.manifest?.trustLevel).toBe("official");
     expect(v.manifest?.type).toBe("integration");
   });
@@ -288,6 +294,90 @@ describe("driver adapter seam", () => {
     const res = tools.get("select_driver")!.run({ driver: "quantum-bus" }) as any;
     expect(res.ok).toBe(false);
     expect(res.output).toContain("unknown driver");
+  });
+});
+
+// ── 6b. Device fabric seam (PACK_PROPOSAL.md §4, `device` scope) ────────────
+//
+// The rpi-sysfs driver now binds through host.device. These tests pin the
+// honesty contract: it binds ONLY on a probed `sysfs-gpio` backend, refuses a
+// simulated fabric (never simulate-as-real), and fails closed when the fabric
+// is unavailable — with actuation following the probe, not the prose.
+
+function mockFabricDevice(opts: { backend: string; available: boolean }): {
+  device: {
+    probe(): { available: boolean; backend: string; detail: string };
+    list(): readonly { id: string; kind: string; direction: string; label: string }[];
+    read(id: string): { ok: true; value: number; nodeId: string } | { ok: false; reason: string };
+    write(id: string, value: number): { ok: true; written: number; readback: number; nodeId: string } | { ok: false; reason: string };
+  };
+  writes: Array<{ id: string; value: number }>;
+} {
+  const writes: Array<{ id: string; value: number }> = [];
+  const device = {
+    probe: () => ({ available: opts.available, backend: opts.backend, detail: `mock ${opts.backend}` }),
+    list: () => [],
+    read: (id: string) =>
+      opts.available ? ({ ok: true, value: 0, nodeId: id } as const) : ({ ok: false, reason: "fabric down" } as const),
+    write: (id: string, value: number) => {
+      if (!opts.available) return { ok: false, reason: "fabric down" } as const;
+      writes.push({ id, value });
+      return { ok: true, written: value, readback: value, nodeId: id } as const;
+    },
+  };
+  return { device, writes };
+}
+
+function fabricHost(device: unknown): { host: any; audits: AuditEvent[] } {
+  const audits: AuditEvent[] = [];
+  const host = {
+    id: "hello-device",
+    apiVersion: 1,
+    coreVersion: "7.1.0",
+    permissions: ["device"] as const,
+    can: (p: string) => p === "device",
+    log: () => {},
+    warn: () => {},
+    audit: (event: string, detail: Record<string, unknown> = {}) => audits.push({ event, detail }),
+    device,
+  };
+  return { host, audits };
+}
+
+describe("device fabric seam binding", () => {
+  test("rpi-sysfs binds through an available sysfs-gpio fabric and actuates via it", () => {
+    const { device, writes } = mockFabricDevice({ backend: "sysfs-gpio", available: true });
+    const { host } = fabricHost(device);
+    const contributions = activate(host);
+    const tools = new Map((contributions.tools ?? []).map((t) => [t.name, t]));
+    tools.get("select_driver")!.run({ driver: "rpi-sysfs" });
+    const probe = tools.get("status")!.run({}) as any;
+    expect(probe.data.probe.available).toBe(true);
+    const w = tools.get("write")!.run({ pin: "gpio2", value: 1 }) as any;
+    expect(w.ok).toBe(true);
+    expect(writes).toEqual([{ id: "gpio2", value: 1 }]);
+  });
+
+  test("a SIMULATED fabric never satisfies rpi-sysfs (refuses to simulate-as-real)", () => {
+    const { device } = mockFabricDevice({ backend: "simulated", available: true });
+    const { host } = fabricHost(device);
+    const contributions = activate(host);
+    const tools = new Map((contributions.tools ?? []).map((t) => [t.name, t]));
+    const sel = tools.get("select_driver")!.run({ driver: "rpi-sysfs" }) as any;
+    expect(sel.data.probe.available).toBe(false);
+    expect(sel.data.probe.detail).toContain("not \"sysfs-gpio\"");
+    expect((tools.get("write")!.run({ pin: "gpio2", value: 1 }) as any).ok).toBe(false);
+  });
+
+  test("an unavailable fabric fails closed for both probe and actuation", () => {
+    const { device } = mockFabricDevice({ backend: "sysfs-gpio", available: false });
+    const { host } = fabricHost(device);
+    const contributions = activate(host);
+    const tools = new Map((contributions.tools ?? []).map((t) => [t.name, t]));
+    const sel = tools.get("select_driver")!.run({ driver: "rpi-sysfs" }) as any;
+    expect(sel.data.probe.available).toBe(false);
+    expect((tools.get("read")!.run({ pin: "adc0" }) as any).ok).toBe(false);
+    expect((tools.get("write")!.run({ pin: "gpio2", value: 1 }) as any).ok).toBe(false);
   });
 });
 

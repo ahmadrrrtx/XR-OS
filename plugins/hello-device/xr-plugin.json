@@ -2,12 +2,12 @@
   "schemaVersion": 1,
   "id": "hello-device",
   "name": "Hello Device",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "rrrtx",
-  "description": "First physical-world capability pack (DF-05 proposal). Treats device pins as CapabilityDescriptors behind a driver adapter seam. Simulated board by default; actuation is risk-tiered (observe/reversible/irreversible), approval-gated, and recorded to XR's tamper-evident audit chain. Hardware-unverified: see PACK_PROPOSAL.md.",
+  "description": "First physical-world capability pack (DF-05 proposal). Treats device pins as CapabilityDescriptors behind a driver adapter seam; the rpi-sysfs driver binds through the host device fabric (PACK_PROPOSAL.md §4 seam). Simulated board by default; actuation is risk-tiered (observe/reversible/irreversible), approval-gated, and recorded to XR's tamper-evident audit chain. Hardware-unverified: see PACK_PROPOSAL.md.",
   "type": "integration",
   "entrypoint": "index.ts",
-  "permissions": [],
+  "permissions": ["device"],
   "capabilities": [
     {
       "kind": "command",

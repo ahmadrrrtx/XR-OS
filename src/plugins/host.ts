@@ -34,6 +34,7 @@ import { priceFor, isLocal } from "../cost/pricing.ts";
 import type { Message } from "../core/types.ts";
 import { PLUGIN_API_VERSION, CORE_VERSION } from "../core/version.ts";
 import type { McpServerDeclaration, PermissionScope } from "./types.ts";
+import { SimulatedFabric } from "../devices/fabric.ts";
 
 export interface FsCapability {
   path(rel: string): string;
@@ -72,6 +73,19 @@ export interface McpCapability {
   servers(): ReadonlyArray<Pick<McpServerDeclaration, "id" | "transport" | "url" | "tools" | "description">>;
 }
 
+/**
+ * Device fabric capability (PACK_PROPOSAL.md §4 seam). Physical-world I/O:
+ * packs holding the `device` scope see fabric nodes, probe the backend, and
+ * read/write values. Every call is audited; the fabric itself fails closed
+ * (LAW 16). Risk classification stays with the pack that owns the board map.
+ */
+export interface DeviceCapability {
+  probe(): { available: boolean; backend: string; detail: string };
+  list(): ReadonlyArray<{ id: string; kind: string; direction: string; label: string }>;
+  read(id: string): { ok: true; value: number; nodeId: string } | { ok: false; reason: string };
+  write(id: string, value: number): { ok: true; written: number; readback: number; nodeId: string } | { ok: false; reason: string };
+}
+
 export interface PluginHost {
   readonly id: string;
   readonly apiVersion: number;
@@ -87,6 +101,7 @@ export interface PluginHost {
   provider?: ProviderCapability;
   secrets?: SecretsCapability;
   mcp?: McpCapability;
+  device?: DeviceCapability;
 }
 
 export interface HostDeps {
@@ -96,6 +111,9 @@ export interface HostDeps {
   pluginDir: string;
   pluginId?: string;
   mcpServers?: McpServerDeclaration[];
+  /** Device fabric injected by the caller (tests / operator-selected backend).
+   *  Defaults to the deterministic simulated fabric when `device` is granted. */
+  deviceFabric?: import("../devices/fabric.ts").DeviceFabric;
 }
 
 const DATA_SUBDIR = "data";
@@ -463,6 +481,36 @@ export function buildHost(granted: PermissionScope[], deps: HostDeps): PluginHos
     }));
     base.mcp = secureCapability({
       servers: secureFn(() => Object.freeze([...visible])),
+    });
+  }
+
+  // ── device fabric (PACK_PROPOSAL.md §4 seam) ─────────────────────────────
+  // IFF the `device` scope was granted. Every call audits; the fabric itself
+  // fails closed (LAW 16) — unavailable backend, unknown node, or direction
+  // mismatch all resolve to { ok:false, reason }, never to a fake value.
+  if (grantedSet.has("device")) {
+    const fabric = deps.deviceFabric ?? new SimulatedFabric();
+    base.device = secureCapability({
+      probe: secureFn(() => {
+        const p = fabric.probe();
+        return { available: p.available, backend: p.backend, detail: p.detail };
+      }),
+      list: secureFn(() => {
+        audit("device.list", { backend: fabric.backend });
+        return Object.freeze(fabric.list().map((n) => ({ id: n.id, kind: n.kind, direction: n.direction, label: n.label })));
+      }),
+      read: secureFn((id: string) => {
+        if (typeof id !== "string" || !id || id.length > 120) throw new Error("invalid device node id");
+        const r = fabric.read(id);
+        audit("device.read", { id, ok: r.ok, ...(r.ok ? { value: r.value } : { reason: r.reason }) });
+        return r;
+      }),
+      write: secureFn((id: string, value: number) => {
+        if (typeof id !== "string" || !id || id.length > 120) throw new Error("invalid device node id");
+        const r = fabric.write(id, value);
+        audit("device.write", { id, value, ok: r.ok, ...(r.ok ? { written: r.written, readback: r.readback } : { reason: r.reason }) });
+        return r;
+      }),
     });
   }
 

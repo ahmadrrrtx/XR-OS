@@ -58,9 +58,15 @@ needs exactly one addition, proposed here for the Ω-next window:
 3. **S-02 timer source for paced actuation** (GAP-19, already scheduled): enables
    time-based blink/PWM without busy-waiting inside sandboxes.
 
-Until those ship, the pack remains a fully-tested simulated reference — which is the
-canon-correct state (GAP-15: "no behavior until packs exist"; DF-05: this proposal is the
-re-entry artifact).
+**Status (implemented):** seams 1 and 2 shipped — the `device` permission scope
+(src/plugins/types.ts) and the host device-fabric capability `host.device`
+(src/devices/fabric.ts: `simulated` + `sysfs-gpio` adapter values, fail-closed
+probes, audited reads/writes). This pack's `rpi-sysfs` driver now binds through
+that fabric: it reports available ONLY on a probed `sysfs-gpio` backend and
+never simulates-as-real. Seam 3 (S-02 timer source, GAP-19) remains pending;
+blink pacing is immediate-v1 until it ships. The pack remains a fully-tested
+simulated reference everywhere else — the canon-correct state (GAP-15: "no
+behavior until packs exist"; DF-05: this proposal is the re-entry artifact).
 
 ## 5. Verification
 

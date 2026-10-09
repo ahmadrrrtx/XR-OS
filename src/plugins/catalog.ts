@@ -60,14 +60,14 @@ const BUILTIN_CATALOG: CatalogEntry[] = [
   {
     id: "hello-device",
     name: "Hello Device",
-    version: "0.1.0",
+    version: "0.2.0",
     author: "rrrtx",
     description:
-      "First physical-world capability pack (DF-05 proposal): device pins as capabilities behind a driver adapter seam, with a risk-tiered actuation lattice and audit-chained action journal. Simulated by default; hardware-unverified.",
+      "First physical-world capability pack (DF-05 proposal): device pins as capabilities behind a driver adapter seam, with a risk-tiered actuation lattice and audit-chained action journal. Simulated by default; the rpi-sysfs driver binds through the host device fabric when the `device` scope is granted. Hardware-unverified.",
     type: "integration",
     source: "builtin",
     install: { kind: "local", path: "plugins/hello-device" },
-    permissions: [],
+    permissions: ["device"],
     capabilities: [
       "command:probe",
       "tool:status",

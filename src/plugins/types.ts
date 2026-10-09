@@ -24,6 +24,7 @@ export const PERMISSION_SCOPES = [
   "ui",
   "mcp",
   "shell",
+  "device",
 ] as const;
 
 export type PermissionScope = (typeof PERMISSION_SCOPES)[number];
@@ -46,6 +47,8 @@ export const PERMISSION_HELP: Record<PermissionScope, string> = {
   ui: "Contribute declarative dashboard/UI metadata.",
   mcp: "Register MCP servers or MCP-backed tools; calls are approval-gated.",
   shell: "Request process/shell access; disabled by default and high risk.",
+  device:
+    "Access the device fabric (physical I/O nodes). Granted at install; every read/write is audited and the fabric fails closed. PACK_PROPOSAL.md §4 seam.",
 };
 
 export const SENSITIVE_PERMISSIONS: ReadonlySet<PermissionScope> = new Set([

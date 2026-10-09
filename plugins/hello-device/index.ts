@@ -21,15 +21,18 @@
  *
  * ── Honesty (P-13) ──────────────────────────────────────────────────────────
  * The default driver is SIMULATED: deterministic in-memory pins, testable
- * anywhere, offline. The `rpi-sysfs` driver ships as an adapter value that
- * PROBES and then reports itself unavailable until the plugin host exposes a
- * device-fabric capability (the seam request in PACK_PROPOSAL.md §4). This
- * pack never simulates-as-real and never claims hardware it cannot reach.
+ * anywhere, offline. The `rpi-sysfs` driver binds through the host's device
+ * fabric (the PACK_PROPOSAL.md §4 seam, granted as the `device` permission
+ * scope): it reports available ONLY when the fabric probes a real `sysfs-gpio`
+ * backend — a simulated fabric never satisfies it, and every unavailable path
+ * fails closed. This pack never simulates-as-real and never claims hardware
+ * it cannot reach.
  *
- * The pack requests ZERO permissions — the safest plugin shape. The device
- * journal is therefore in-memory for v1 (persistence needs the seam too);
- * the authoritative tamper-evident record of every actuation is XR's own
- * audit chain (host.audit → `plugin.device.*`), verifiable via `xr verify-log`.
+ * The pack requests ONE permission — `device` — granted at install like any
+ * scope, with every fabric read/write audited by the host. The device journal
+ * is in-memory for v1 (persistence is a future seam); the authoritative
+ * tamper-evident record of every actuation is XR's own audit chain
+ * (host.audit → `plugin.device.*`), verifiable via `xr verify-log`.
  *
  * NOTE: plugins receive ONLY the host. No node:fs, no process, no fetch.
  */
@@ -101,27 +104,60 @@ class SimulatedBoardDriver implements DeviceDriver {
 }
 
 /**
- * Raspberry Pi sysfs driver — SHIPS UNAVAILABLE BY DESIGN (v1).
- * Plugin sandboxes expose no device fabric yet; this adapter probes, reports
- * honestly, and fails CLOSED rather than pretending. When the host gains a
- * device-fabric capability (PACK_PROPOSAL.md §4), this adapter is the seam
- * where real hardware binds — no kernel change, per LAW 17.
+ * Raspberry Pi sysfs driver — binds through the host's device fabric seam
+ * (PACK_PROPOSAL.md §4, now granted as the `device` permission scope).
+ *
+ * Honesty contract (LAW 16 / P-13):
+ *  - available ONLY when the fabric reports available AND its backend is
+ *    `sysfs-gpio`; a simulated fabric NEVER satisfies this driver — refusing
+ *    to simulate-as-real is the whole point of the adapter.
+ *  - if the `device` scope was not granted (host.device undefined) or the
+ *    fabric is unavailable, probe reports honestly and read/write fail closed.
+ * No kernel change, per LAW 17: this is an adapter VALUE over the fabric.
  */
 class RpiSysfsDriver implements DeviceDriver {
   readonly name = "rpi-sysfs";
+  constructor(private readonly host: PluginHost) {}
+
   probe(): DriverProbe {
-    return {
-      available: false,
-      detail:
-        "device fabric not exposed to plugin sandboxes yet (seam request: PACK_PROPOSAL.md §4). " +
-        "Fail-closed per LAW 16: refusing to simulate-as-real.",
-    };
+    const fabric = this.host.device;
+    if (!fabric) {
+      return {
+        available: false,
+        detail:
+          "`device` permission scope not granted — no device fabric exposed. " +
+          "Fail-closed per LAW 16: refusing to simulate-as-real.",
+      };
+    }
+    const p = fabric.probe();
+    if (!p.available) {
+      return { available: false, detail: `fabric probe unavailable: ${p.detail}. Fail-closed per LAW 16.` };
+    }
+    if (p.backend !== "sysfs-gpio") {
+      return {
+        available: false,
+        detail:
+          `fabric backend is "${p.backend}", not "sysfs-gpio". ` +
+          "Fail-closed per LAW 16: refusing to simulate-as-real.",
+      };
+    }
+    return { available: true, detail: `bound to device fabric (${p.backend}): ${p.detail}` };
   }
-  read(): { value: number } {
-    throw new Error("fail-closed: rpi-sysfs driver unavailable (probe before actuating)");
+
+  read(spec: PinSpec): { value: number } {
+    const probe = this.probe();
+    if (!probe.available) throw new Error(`fail-closed: rpi-sysfs unavailable — ${probe.detail}`);
+    const r = this.host.device!.read(spec.pin);
+    if (!r.ok) throw new Error(`fail-closed: fabric read ${spec.pin} denied — ${r.reason}`);
+    return { value: r.value };
   }
-  write(): { written: number; readback: number } {
-    throw new Error("fail-closed: rpi-sysfs driver unavailable (probe before actuating)");
+
+  write(spec: PinSpec, value: number): { written: number; readback: number } {
+    const probe = this.probe();
+    if (!probe.available) throw new Error(`fail-closed: rpi-sysfs unavailable — ${probe.detail}`);
+    const w = this.host.device!.write(spec.pin, value);
+    if (!w.ok) throw new Error(`fail-closed: fabric write ${spec.pin} denied — ${w.reason}`);
+    return { written: w.written, readback: w.readback };
   }
 }
 
@@ -195,7 +231,7 @@ function toDigital(value: unknown): number | undefined {
 export function activate(host: PluginHost): PluginContributions {
   const drivers: Record<string, DeviceDriver> = {
     simulated: new SimulatedBoardDriver(),
-    "rpi-sysfs": new RpiSysfsDriver(),
+    "rpi-sysfs": new RpiSysfsDriver(host),
   };
   let driverName = "simulated";
   let tick = 0;
