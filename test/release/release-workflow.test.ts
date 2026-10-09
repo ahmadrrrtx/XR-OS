@@ -31,13 +31,23 @@ describe("Phase 9 · T1/T2 — release.yml is a complete signed release pipeline
     expect(workflow).toMatch(/tags:\s*\n\s*- "v\*"/);
   });
 
-  test("truth gates run BEFORE any build (release:check + claim-lint + channel:check)", () => {
+  test("truth gates run BEFORE any build — as the named S-08 rail (release + claims + lockstep + channels)", () => {
     expect(jobs.get("gates")!).toBeLessThan(jobs.get("build")!);
-    const gatesIdx = workflow.indexOf("bun run release:check");
-    expect(gatesIdx).toBeGreaterThan(-1);
-    expect(workflow.indexOf("bun run claim-lint")).toBeGreaterThan(-1);
-    expect(workflow.indexOf("bun run channel:check")).toBeGreaterThan(-1);
-    expect(workflow.indexOf("build-matrix.ts")).toBeGreaterThan(gatesIdx);
+    // The gates job invokes the S-08 admission rail (canonical S-08 §27) —
+    // the single named entry point for the truth gates.
+    const railIdx = workflow.indexOf("scripts/s08-rail.ts");
+    expect(railIdx).toBeGreaterThan(-1);
+    expect(workflow).toContain("S-08 admission rails");
+    expect(workflow.indexOf("build-matrix.ts")).toBeGreaterThan(railIdx);
+    // The rail itself must still contain every truth gate (no silent removal):
+    const rail = readFileSync(join(ROOT, "scripts/s08-rail.ts"), "utf8");
+    expect(rail).toContain("release:check");
+    expect(rail).toContain("claim-lint");
+    expect(rail).toContain("channel:check");
+    expect(rail).toContain("publish-lockstep.ts");
+    expect(rail).toContain("docs:validate");
+    // Lockstep is verified again AFTER npm publish (the 3.1.5 incident loop):
+    expect(workflow).toContain("--post-publish");
   });
 
   test("builds the full 5-target canonical matrix across real OS runners", () => {

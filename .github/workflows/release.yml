@@ -50,14 +50,11 @@ jobs:
         uses: oven-sh/setup-bun@v2
       - name: Install (frozen, no scripts)
         run: bun install --frozen-lockfile --ignore-scripts
-      - name: Identity + claim + channel gates
-        run: |
-          bun run release:check
-          bun run claim-lint
-          bun run channel:check
-          bun run typecheck
-      - name: Publish lockstep (C-D04 — tag + surfaces + registry direction)
-        run: bun run scripts/publish-lockstep.ts --tag "$GITHUB_REF_NAME" --check-npm
+      # The admission evidence chain is NAMED in the job graph (SPEC-S-08 §27.3):
+      # one step runs all six rails — typecheck, docs set, stamp drift, claims,
+      # publish lockstep (tag + registry direction), channel lock — fail-closed.
+      - name: S-08 admission rails (SPEC-S-08 §27.3 evidence chain)
+        run: bun run scripts/s08-rail.ts --tag "$GITHUB_REF_NAME" --check-npm
       - name: Parity manifest validates
         run: bun run scripts/platform-parity.ts --validate
       - name: Test floor (supply chain + trust + security + release)
